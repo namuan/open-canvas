@@ -34,9 +34,10 @@ struct CanvasView: View {
                             x: node.position.x * appState.canvasScale + appState.canvasOffset.width + geometry.size.width / 2,
                             y: node.position.y * appState.canvasScale + appState.canvasOffset.height + geometry.size.height / 2
                         )
+                        .scaleEffect(appState.canvasScale, anchor: .center)
                         .frame(
-                            width: node.isMinimized ? 280 : node.size.width * appState.canvasScale,
-                            height: node.isMinimized ? 72 : node.size.height * appState.canvasScale
+                            width: node.isMinimized ? 280 : node.size.width,
+                            height: node.isMinimized ? 72 : node.size.height
                         )
                         .shadow(
                             color: appState.isNodeSelected(node.id) ? node.color.primaryColor.opacity(0.25) : .clear,

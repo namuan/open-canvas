@@ -66,7 +66,9 @@ final class AppState {
         connections = persistenceService.loadConnections()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
-        sidebarVisible = persistenceService.loadSidebarVisible()
+        // Always start with sidebar closed on app launch.
+        sidebarVisible = false
+        persistenceService.saveSidebarVisible(false)
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
@@ -360,13 +362,18 @@ final class AppState {
     }
     
     func resetView() {
-        canvasScale = 1.0
-        canvasOffset = .zero
-        
-        persistenceService.saveCanvasOffset(canvasOffset)
-        persistenceService.saveCanvasScale(canvasScale)
-        
-        log(.info, category: .canvas, "Reset canvas view")
+        if nodes.isEmpty {
+            canvasScale = 1.0
+            canvasOffset = .zero
+            persistenceService.saveCanvasOffset(canvasOffset)
+            persistenceService.saveCanvasScale(canvasScale)
+            log(.info, category: .canvas, "Reset canvas view (no nodes)")
+            return
+        }
+
+        let allIndices = Array(nodes.indices)
+        fitNodesInViewport(nodeIndices: allIndices)
+        log(.info, category: .canvas, "Reset canvas view (fit all nodes)")
     }
     
     func zoomIn() {
