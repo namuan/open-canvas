@@ -299,6 +299,15 @@ final class AppState {
         log(.info, category: .ui, "Toggled sidebar: \(sidebarVisible)")
     }
     
+    func setSidebarVisible(_ visible: Bool) {
+        guard sidebarVisible != visible else { return }
+        
+        sidebarVisible = visible
+        persistenceService.saveSidebarVisible(visible)
+        
+        log(.info, category: .ui, "Set sidebar visibility: \(visible)")
+    }
+    
     func updateBackgroundStyle(_ style: CanvasBackgroundStyle) {
         canvasBackgroundStyle = style
         persistenceService.saveCanvasBackgroundStyle(style)

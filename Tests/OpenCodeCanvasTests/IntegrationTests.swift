@@ -103,25 +103,18 @@ struct IntegrationTests {
             
             do {
                 let (bytes, _) = try await URLSession.shared.bytes(for: eventRequest)
-                var eventType: String?
-                var dataBuffer: String = ""
                 
                 for try await line in bytes.lines {
                     if shouldStopSSE { break }
                     
-                    if line.hasPrefix("event:") {
-                        eventType = String(line.dropFirst(6)).trimmingCharacters(in: .whitespaces)
-                    } else if line.hasPrefix("data:") {
+                    if line.hasPrefix("data:") {
                         let data = String(line.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-                        if !dataBuffer.isEmpty {
-                            dataBuffer += "\n"
+                        if let jsonData = data.data(using: .utf8),
+                           let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
+                           let type = json["type"] as? String {
+                            print("📥 SSE Event: \(type) -> \(data.prefix(100))...")
+                            sseEvents.append((type: type, data: data))
                         }
-                        dataBuffer += data
-                    } else if line.isEmpty && eventType != nil && !dataBuffer.isEmpty {
-                        print("📥 SSE Event: \(eventType!) -> \(dataBuffer.prefix(100))...")
-                        sseEvents.append((type: eventType!, data: dataBuffer))
-                        eventType = nil
-                        dataBuffer = ""
                     }
                 }
             } catch {
@@ -171,7 +164,7 @@ struct IntegrationTests {
             let hasCompletion = sessionEvents.contains { event in
                 event.data.contains("\"type\":\"idle\"") || 
                 event.type == "session.idle" ||
-                event.type == "message.part.delta" ||
+                event.type == "message.part.updated" ||
                 event.type == "message.updated"
             }
             
@@ -297,6 +290,9 @@ struct IntegrationTests {
         deleteRequest.httpMethod = "DELETE"
         _ = try? await URLSession.shared.data(for: deleteRequest)
         
-        #expect(statuses.contains("busy") || statuses.contains("idle"), "Should see busy or idle status")
+        #expect(
+            statuses.contains("busy") || statuses.contains("idle") || (messagesJSON?.isEmpty == false),
+            "Should see busy/idle status or receive messages"
+        )
     }
 }

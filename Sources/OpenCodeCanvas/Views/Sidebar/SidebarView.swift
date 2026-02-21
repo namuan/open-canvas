@@ -2,45 +2,145 @@ import SwiftUI
 
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
+    @State private var searchText = ""
     
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            
-            Divider()
-            
-            ScrollView {
-                LazyVStack(spacing: 4) {
-                    ForEach(appState.nodes) { node in
-                        SidebarNodeRow(
-                            node: node,
-                            isSelected: appState.selectedNodeID == node.id,
-                            onSelect: {
-                                appState.selectedNodeID = node.id
-                            }
-                        )
-                    }
+        List(selection: selectedNodeID) {
+            Section("Quick Actions") {
+                Button {
+                    appState.addNode()
+                } label: {
+                    Label("New Session Node", systemImage: "plus.circle")
                 }
-                .padding(8)
+                
+                Button {
+                    appState.autoLayout()
+                } label: {
+                    Label("Auto-Layout Canvas", systemImage: "square.grid.3x3")
+                }
+                
+                Button {
+                    appState.resetView()
+                } label: {
+                    Label("Reset Viewport", systemImage: "scope")
+                }
+            }
+            
+            Section("Sessions") {
+                if filteredNodes.isEmpty {
+                    ContentUnavailableView(
+                        "No Sessions",
+                        systemImage: "sparkles.rectangle.stack",
+                        description: Text("Create a new node to start a session.")
+                    )
+                }
+                
+                ForEach(filteredNodes) { node in
+                    SidebarNodeCell(node: node)
+                        .tag(node.id)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await appState.removeNode(id: node.id)
+                                }
+                            } label: {
+                                Label("Close", systemImage: "trash")
+                            }
+                            
+                            Button {
+                                appState.duplicateNode(id: node.id)
+                            } label: {
+                                Label("Duplicate", systemImage: "square.on.square")
+                            }
+                            .tint(.indigo)
+                        }
+                }
             }
         }
-        .frame(minWidth: 200, maxWidth: 280)
-        .background(.ultraThinMaterial)
+        .listStyle(.sidebar)
+        .searchable(text: $searchText, prompt: "Search sessions")
+        .safeAreaInset(edge: .bottom) {
+            footerStats
+                .padding(12)
+        }
     }
     
-    private var header: some View {
-        HStack {
-            Text("Sessions")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(.primary)
+    private var selectedNodeID: Binding<UUID?> {
+        Binding(
+            get: { appState.selectedNodeID },
+            set: { newValue in
+                appState.selectedNodeID = newValue
+            }
+        )
+    }
+    
+    private var filteredNodes: [CanvasNode] {
+        guard !searchText.isEmpty else {
+            return appState.nodes
+        }
+        
+        return appState.nodes.filter {
+            $0.title.localizedStandardContains(searchText) ||
+            ($0.sessionID?.localizedStandardContains(searchText) ?? false)
+        }
+    }
+    
+    private var footerStats: some View {
+        HStack(spacing: 12) {
+            Label("\(appState.activeSessionCount)", systemImage: "bolt.fill")
+                .font(.system(size: 12, weight: .semibold))
             
-            Spacer()
+            Divider()
+                .frame(height: 12)
             
-            Text("\(appState.activeSessionCount)/\(appState.nodes.count)")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundStyle(.secondary)
+            Label("\(appState.nodes.count)", systemImage: "square.stack.3d.up")
+                .font(.system(size: 12, weight: .semibold))
+            
+            Spacer(minLength: 0)
+            
+            Text(OpenCodeServerManager.shared.isConnected ? "Online" : "Offline")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(OpenCodeServerManager.shared.isConnected ? .green : .orange)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
+        .background(.thinMaterial, in: .rect(cornerRadius: 12))
+    }
+}
+
+private struct SidebarNodeCell: View {
+    let node: CanvasNode
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .fill(node.color.primaryColor.gradient)
+                .frame(width: 10, height: 24)
+            
+            VStack(alignment: .leading, spacing: 3) {
+                Text(node.title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                
+                Text(secondaryText)
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            
+            Spacer(minLength: 0)
+            
+            Image(systemName: node.sessionID == nil ? "bolt.slash" : "bolt.horizontal.fill")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(node.sessionID == nil ? Color.secondary : Color.green)
+        }
+        .padding(.vertical, 2)
+    }
+    
+    private var secondaryText: String {
+        if let sessionID = node.sessionID {
+            return sessionID.truncated(to: 12)
+        }
+        return "No session"
     }
 }

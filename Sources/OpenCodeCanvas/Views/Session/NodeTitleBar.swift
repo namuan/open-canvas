@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 struct NodeTitleBar: View {
     let title: String
@@ -10,87 +11,118 @@ struct NodeTitleBar: View {
     let onClose: () -> Void
     
     @State private var isEditing = false
-    @State private var editedTitle: String = ""
+    @State private var editedTitle = ""
     @FocusState private var isTitleFocused: Bool
     
     var body: some View {
-        HStack(spacing: 12) {
-            HStack(spacing: 0) {
-                Rectangle()
-                    .fill(.white.opacity(0.3))
-                    .frame(width: 3)
+        HStack(spacing: 10) {
+            statusIcon
+            
+            VStack(alignment: .leading, spacing: 2) {
+                if isEditing {
+                    TextField("Title", text: $editedTitle)
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .focused($isTitleFocused)
+                        .onSubmit {
+                            commitTitleEdit()
+                        }
+                        .onExitCommand {
+                            cancelTitleEdit()
+                        }
+                } else {
+                    Text(title)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .onTapGesture(count: 2) {
+                            startTitleEdit()
+                        }
+                }
+                
+                if let sessionID {
+                    Text(sessionID.truncated(to: 18))
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.74))
+                }
             }
             
-            AnimatedStatusDot(status: status)
+            Spacer(minLength: 0)
             
-            if isEditing {
-                TextField("Title", text: $editedTitle)
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .focused($isTitleFocused)
-                    .onSubmit {
-                        commitTitleEdit()
-                    }
-                    .onExitCommand {
-                        cancelTitleEdit()
-                    }
-            } else {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .lineLimit(1)
-                    .onTapGesture(count: 2) {
-                        startTitleEdit()
-                    }
-            }
-            
-            Spacer()
-            
-            if let sessionID = sessionID {
+            if let sessionID {
                 Button {
                     copySessionID(sessionID)
                 } label: {
-                    Text(sessionID.truncated(to: 8))
-                        .font(.system(size: 10, design: .monospaced))
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.white.opacity(0.2))
-                        .clipShape(.rect(cornerRadius: 4))
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
-                .help("Click to copy session ID")
+                .foregroundStyle(.white.opacity(0.8))
+                .help("Copy session ID")
             }
             
             Button {
                 onMinimize()
             } label: {
-                Image(systemName: "minus")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.6))
-                    .frame(width: 12, height: 12)
-                    .background(Color.yellow)
-                    .clipShape(.rect(cornerRadius: 2))
+                Image(systemName: "rectangle.compress.vertical")
+                    .font(.system(size: 12, weight: .semibold))
             }
             .buttonStyle(.plain)
+            .foregroundStyle(.white.opacity(0.8))
             .help("Minimize")
             
             Button {
                 onClose()
             } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.6))
-                    .frame(width: 12, height: 12)
-                    .background(Color.red)
-                    .clipShape(.rect(cornerRadius: 2))
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 14, weight: .semibold))
             }
             .buttonStyle(.plain)
+            .foregroundStyle(.white.opacity(0.85))
             .help("Close")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
-        .background(.black.opacity(0.3))
+        .background(titleBarBackground)
+    }
+    
+    private var statusIcon: some View {
+        Image(systemName: statusSymbol)
+            .font(.system(size: 12, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 24, height: 24)
+            .background(color.primaryColor.opacity(0.55), in: .circle)
+            .overlay {
+                Circle()
+                    .stroke(.white.opacity(0.28), lineWidth: 1)
+            }
+    }
+    
+    private var titleBarBackground: some View {
+        LinearGradient(
+            colors: [
+                .black.opacity(0.42),
+                color.primaryColor.opacity(0.24)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private var statusSymbol: String {
+        switch status {
+        case .disconnected:
+            return "bolt.slash"
+        case .connecting:
+            return "clock.arrow.circlepath"
+        case .idle:
+            return "bolt.horizontal.fill"
+        case .running:
+            return "waveform.path.ecg"
+        case .error:
+            return "exclamationmark.triangle.fill"
+        }
     }
     
     private func startTitleEdit() {

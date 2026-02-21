@@ -70,15 +70,36 @@ struct OCToolUse: Codable, Sendable {
 
 struct OCPromptRequest: Codable, Sendable {
     let parts: [OCPromptPart]
+    let model: OCPromptModel?
     
     init(content: String, model: String? = nil) {
-        self.parts = [OCPromptPart(type: "text", text: content)]
+        parts = [OCPromptPart(type: "text", text: content)]
+        self.model = OCPromptModel(modelString: model)
     }
 }
 
 struct OCPromptPart: Codable, Sendable {
     let type: String
     let text: String
+}
+
+struct OCPromptModel: Codable, Sendable {
+    let providerID: String
+    let modelID: String
+    
+    init?(modelString: String?) {
+        guard let modelString, !modelString.isEmpty else { return nil }
+        
+        let parts = modelString.split(separator: "/", maxSplits: 1, omittingEmptySubsequences: false)
+        guard parts.count == 2 else { return nil }
+        
+        let provider = String(parts[0])
+        let model = String(parts[1])
+        guard !provider.isEmpty, !model.isEmpty else { return nil }
+        
+        providerID = provider
+        modelID = model
+    }
 }
 
 struct OCForkRequest: Codable, Sendable {

@@ -54,6 +54,7 @@ final class OpenCodeServerManager {
         decoder.dateDecodingStrategy = .millisecondsSince1970
         return decoder
     }()
+    private let jsonEncoder = JSONEncoder()
     
     private var baseURL: URL? {
         URL(string: serverURL)
@@ -281,6 +282,11 @@ final class OpenCodeServerManager {
         }
         
         let request = OCPromptRequest(content: content, model: model)
+        if let promptBodyData = try? jsonEncoder.encode(request),
+           let promptBody = responseBodyString(from: promptBodyData) {
+            log(.info, category: .network, "Prompt request payload for session \(sessionID): \(promptBody)")
+        }
+        
         try await postNoResponse(url, body: request)
         log(.info, category: .session, "Sent prompt to session \(sessionID): \(content.truncated(to: 50))")
     }
@@ -331,10 +337,12 @@ final class OpenCodeServerManager {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        logRequest(request, bodyData: nil)
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            try validateResponse(response)
+            logResponse(response, data: data, for: request)
+            try validateResponse(response, data: data, for: request)
             return try jsonDecoder.decode(T.self, from: data)
         } catch let error as OpenCodeError {
             throw error
@@ -349,11 +357,14 @@ final class OpenCodeServerManager {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try jsonEncoder.encode(body)
+        request.httpBody = bodyData
+        logRequest(request, bodyData: bodyData)
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
-            try validateResponse(response)
+            logResponse(response, data: data, for: request)
+            try validateResponse(response, data: data, for: request)
             return try jsonDecoder.decode(R.self, from: data)
         } catch let error as OpenCodeError {
             throw error
@@ -368,11 +379,14 @@ final class OpenCodeServerManager {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try jsonEncoder.encode(body)
+        request.httpBody = bodyData
+        logRequest(request, bodyData: bodyData)
         
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            try validateResponse(response)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logResponse(response, data: data, for: request)
+            try validateResponse(response, data: data, for: request)
         } catch let error as OpenCodeError {
             throw error
         } catch {
@@ -386,11 +400,14 @@ final class OpenCodeServerManager {
         var request = URLRequest(url: url)
         request.httpMethod = "PATCH"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.httpBody = try JSONEncoder().encode(body)
+        let bodyData = try jsonEncoder.encode(body)
+        request.httpBody = bodyData
+        logRequest(request, bodyData: bodyData)
         
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            try validateResponse(response)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logResponse(response, data: data, for: request)
+            try validateResponse(response, data: data, for: request)
         } catch let error as OpenCodeError {
             throw error
         } catch {
@@ -403,10 +420,12 @@ final class OpenCodeServerManager {
         
         var request = URLRequest(url: url)
         request.httpMethod = "DELETE"
+        logRequest(request, bodyData: nil)
         
         do {
-            let (_, response) = try await URLSession.shared.data(for: request)
-            try validateResponse(response)
+            let (data, response) = try await URLSession.shared.data(for: request)
+            logResponse(response, data: data, for: request)
+            try validateResponse(response, data: data, for: request)
         } catch let error as OpenCodeError {
             throw error
         } catch {
@@ -414,21 +433,86 @@ final class OpenCodeServerManager {
         }
     }
     
-    private func validateResponse(_ response: URLResponse) throws {
+    private func validateResponse(_ response: URLResponse, data: Data?, for request: URLRequest) throws {
         guard let httpResponse = response as? HTTPURLResponse else {
             throw OpenCodeError.serverError(0, "Invalid response")
         }
+        
+        let responseBody = responseBodyString(from: data) ?? "<empty>"
         
         switch httpResponse.statusCode {
         case 200...299:
             return
         case 400...499:
-            throw OpenCodeError.serverError(httpResponse.statusCode, "Client error")
+            throw OpenCodeError.serverError(
+                httpResponse.statusCode,
+                "Client error for \(request.httpMethod ?? "REQUEST") \(request.url?.path ?? ""): \(responseBody)"
+            )
         case 500...599:
-            throw OpenCodeError.serverError(httpResponse.statusCode, "Server error")
+            throw OpenCodeError.serverError(
+                httpResponse.statusCode,
+                "Server error for \(request.httpMethod ?? "REQUEST") \(request.url?.path ?? ""): \(responseBody)"
+            )
         default:
-            throw OpenCodeError.serverError(httpResponse.statusCode, "Unknown error")
+            throw OpenCodeError.serverError(
+                httpResponse.statusCode,
+                "Unknown error for \(request.httpMethod ?? "REQUEST") \(request.url?.path ?? ""): \(responseBody)"
+            )
         }
+    }
+    
+    private func logRequest(_ request: URLRequest, bodyData: Data?) {
+        let shouldPromoteLogLevel = (request.url?.path.contains("/prompt_async") ?? false)
+        let logLevel: LogLevel = shouldPromoteLogLevel ? .info : .debug
+        
+        var details: [String] = []
+        details.append("HTTP Request")
+        details.append("method=\(request.httpMethod ?? "UNKNOWN")")
+        details.append("url=\(request.url?.absoluteString ?? "<nil>")")
+        
+        if let headers = request.allHTTPHeaderFields, !headers.isEmpty {
+            details.append("headers=\(headers)")
+        }
+        
+        if let bodyData {
+            details.append("body=\(responseBodyString(from: bodyData) ?? "<binary>")")
+        } else {
+            details.append("body=<empty>")
+        }
+        
+        log(logLevel, category: .network, details.joined(separator: " | "))
+    }
+    
+    private func logResponse(_ response: URLResponse, data: Data?, for request: URLRequest) {
+        let isPromptRequest = request.url?.path.contains("/prompt_async") ?? false
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            let level: LogLevel = isPromptRequest ? .info : .debug
+            log(level, category: .network, "HTTP Response | method=\(request.httpMethod ?? "UNKNOWN") | url=\(request.url?.absoluteString ?? "<nil>") | invalid response type")
+            return
+        }
+        
+        let logLevel: LogLevel = (isPromptRequest || !(200...299).contains(httpResponse.statusCode)) ? .info : .debug
+        
+        var details: [String] = []
+        details.append("HTTP Response")
+        details.append("method=\(request.httpMethod ?? "UNKNOWN")")
+        details.append("url=\(request.url?.absoluteString ?? "<nil>")")
+        details.append("status=\(httpResponse.statusCode)")
+        details.append("headers=\(httpResponse.allHeaderFields)")
+        details.append("body=\(responseBodyString(from: data) ?? "<empty>")")
+        
+        log(logLevel, category: .network, details.joined(separator: " | "))
+    }
+    
+    private func responseBodyString(from data: Data?) -> String? {
+        guard let data, !data.isEmpty else { return nil }
+        if let json = try? JSONSerialization.jsonObject(with: data),
+           let prettyData = try? JSONSerialization.data(withJSONObject: json, options: [.prettyPrinted, .sortedKeys]),
+           let prettyString = String(data: prettyData, encoding: .utf8) {
+            return prettyString
+        }
+        return String(data: data, encoding: .utf8)
     }
 }
 

@@ -1,18 +1,21 @@
 import SwiftUI
 
+#if os(macOS)
+import AppKit
+#endif
+
 struct SessionNodeView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel: SessionNodeViewModel
     @State private var isDragging = false
     @State private var dragOffset: CGSize = .zero
     @State private var showingColorPicker = false
-    @State private var showingContextMenu = false
     
     let node: CanvasNode
     
     init(node: CanvasNode) {
         self.node = node
-        self._viewModel = State(initialValue: SessionNodeViewModel(nodeID: node.id))
+        _viewModel = State(initialValue: SessionNodeViewModel(nodeID: node.id))
     }
     
     var body: some View {
@@ -23,15 +26,21 @@ struct SessionNodeView: View {
                 expandedView
             }
         }
-        .background(node.color.gradient)
-        .clipShape(.rect(cornerRadius: 16))
+        .background(nodeCardBackground)
+        .overlay {
+            RoundedRectangle(cornerRadius: node.isMinimized ? 18 : 22, style: .continuous)
+                .stroke(selectionStroke, lineWidth: appState.selectedNodeID == node.id ? 2 : 1)
+        }
+        .clipShape(.rect(cornerRadius: node.isMinimized ? 18 : 22))
         .shadow(
-            color: node.color.primaryColor.opacity(appState.selectedNodeID == node.id ? 0.6 : 0.4),
-            radius: appState.selectedNodeID == node.id ? 30 : 24
+            color: node.color.primaryColor.opacity(appState.selectedNodeID == node.id ? 0.32 : 0.18),
+            radius: appState.selectedNodeID == node.id ? 24 : 14,
+            y: 12
         )
-        .scaleEffect(isDragging ? 1.03 : 1.0)
+        .scaleEffect(isDragging ? 1.02 : 1)
         .offset(dragOffset)
-        .animation(.spring(response: 0.3), value: isDragging)
+        .animation(.spring(response: 0.3, dampingFraction: 0.72), value: isDragging)
+        .animation(.easeInOut(duration: 0.2), value: appState.selectedNodeID)
         .gesture(dragGesture)
         .simultaneousGesture(longPressGesture)
         .contextMenu {
@@ -39,6 +48,7 @@ struct SessionNodeView: View {
         }
         .onTapGesture {
             appState.selectedNodeID = node.id
+            triggerSelectionHaptic()
         }
         .onAppear {
             viewModel.configure(with: node.sessionID)
@@ -53,6 +63,34 @@ struct SessionNodeView: View {
         }
     }
     
+    private var nodeCardBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    node.color.primaryColor.opacity(0.95),
+                    node.color.primaryColor.opacity(0.65),
+                    Color.black.opacity(0.7)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            
+            Rectangle()
+                .fill(.ultraThinMaterial.opacity(0.82))
+        }
+    }
+    
+    private var selectionStroke: LinearGradient {
+        LinearGradient(
+            colors: [
+                .white.opacity(appState.selectedNodeID == node.id ? 0.75 : 0.35),
+                node.color.primaryColor.opacity(appState.selectedNodeID == node.id ? 0.9 : 0.45)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
     private var expandedView: some View {
         VStack(spacing: 0) {
             NodeTitleBar(
@@ -64,7 +102,10 @@ struct SessionNodeView: View {
                     appState.updateNodeTitle(id: node.id, title: newTitle)
                 },
                 onMinimize: {
-                    appState.toggleNodeMinimized(id: node.id)
+                    withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) {
+                        appState.toggleNodeMinimized(id: node.id)
+                    }
+                    triggerSelectionHaptic()
                 },
                 onClose: {
                     Task {
@@ -74,7 +115,7 @@ struct SessionNodeView: View {
             )
             
             Divider()
-                .background(.white.opacity(0.2))
+                .overlay(.white.opacity(0.15))
             
             if viewModel.status == .disconnected {
                 disconnectedView
@@ -112,97 +153,101 @@ struct SessionNodeView: View {
     }
     
     private var minimizedView: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             AnimatedStatusDot(status: viewModel.status)
             
             Text(node.title)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 14, weight: .semibold))
                 .lineLimit(1)
             
-            Spacer()
+            Spacer(minLength: 0)
             
             StatusBadge(status: viewModel.status)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(width: 220, height: 60)
+        .frame(width: 280, height: 72)
+        .contentShape(Rectangle())
         .onTapGesture(count: 2) {
-            appState.toggleNodeMinimized(id: node.id)
+            withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) {
+                appState.toggleNodeMinimized(id: node.id)
+            }
+            triggerSelectionHaptic()
         }
     }
     
     private var disconnectedView: some View {
-        VStack(spacing: 16) {
-            Spacer()
+        VStack(spacing: 14) {
+            Spacer(minLength: 20)
             
-            Image(systemName: "rectangle.dashed.badge.record")
-                .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.5))
+            Image(systemName: "network.slash")
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(.white.opacity(0.76))
             
             Text("No Active Session")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.9))
+            
+            Text("Create a session to begin messaging in this node.")
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.72))
             
             Button {
                 Task {
                     await viewModel.createSession()
                 }
             } label: {
-                Text("Create Session")
-                    .font(.system(size: 14, weight: .medium))
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(.white.opacity(0.2))
-                    .clipShape(.rect(cornerRadius: 8))
+                Label("Create Session", systemImage: "plus.circle.fill")
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 9)
             }
-            .buttonStyle(.plain)
+            .buttonStyle(.borderedProminent)
             .disabled(viewModel.status == .connecting)
             
             if viewModel.status == .connecting {
                 ProgressView()
-                    .scaleEffect(0.8)
+                    .controlSize(.small)
             }
             
-            Spacer()
+            Spacer(minLength: 20)
         }
         .frame(maxWidth: .infinity)
     }
     
     private func errorBanner(_ error: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.red)
+                .foregroundStyle(.yellow)
             
             Text(error)
                 .font(.system(size: 12))
                 .lineLimit(2)
                 .foregroundStyle(.white)
             
-            Spacer()
+            Spacer(minLength: 0)
             
             Button {
                 viewModel.errorMessage = nil
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.white.opacity(0.5))
+                    .foregroundStyle(.white.opacity(0.68))
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.red.opacity(0.3))
+        .padding(.vertical, 9)
+        .background(.black.opacity(0.26))
     }
     
     private func permissionBanner(_ permission: PermissionRequestedData) -> some View {
-        VStack(spacing: 8) {
-            Text("Permission Required")
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Permission Required", systemImage: "hand.raised.fill")
                 .font(.system(size: 12, weight: .semibold))
             
             Text(permission.description)
                 .font(.system(size: 11))
                 .lineLimit(3)
             
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
                 Button("Deny") {
                     Task {
                         await viewModel.respondToPermission(approved: false)
@@ -219,7 +264,8 @@ struct SessionNodeView: View {
             }
         }
         .padding(12)
-        .background(.yellow.opacity(0.3))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.yellow.opacity(0.22))
     }
     
     private var dragGesture: some Gesture {
@@ -243,9 +289,10 @@ struct SessionNodeView: View {
     private var longPressGesture: some Gesture {
         LongPressGesture(minimumDuration: 0.2)
             .onEnded { _ in
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
                     appState.selectedNodeID = node.id
                 }
+                triggerSelectionHaptic()
             }
     }
     
@@ -266,7 +313,10 @@ struct SessionNodeView: View {
         Button {
             appState.toggleNodeMinimized(id: node.id)
         } label: {
-            Label(node.isMinimized ? "Expand" : "Minimize", systemImage: node.isMinimized ? "arrow.up.left.and.arrow.down.right" : "minus.rectangle")
+            Label(
+                node.isMinimized ? "Expand" : "Minimize",
+                systemImage: node.isMinimized ? "rectangle.expand.vertical" : "rectangle.compress.vertical"
+            )
         }
         
         Divider()
@@ -310,5 +360,11 @@ struct SessionNodeView: View {
         } label: {
             Label("Close", systemImage: "xmark.circle")
         }
+    }
+    
+    private func triggerSelectionHaptic() {
+        #if os(macOS)
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        #endif
     }
 }

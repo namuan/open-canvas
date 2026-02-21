@@ -7,13 +7,27 @@ struct CanvasBackground: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.black.opacity(0.95)
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.05, green: 0.07, blue: 0.11),
+                        Color(red: 0.03, green: 0.04, blue: 0.07),
+                        Color(red: 0.08, green: 0.13, blue: 0.2)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                
+                Circle()
+                    .fill(Color.cyan.opacity(0.08))
+                    .frame(width: geometry.size.width * 0.7)
+                    .blur(radius: 30)
+                    .offset(x: geometry.size.width * 0.2, y: -geometry.size.height * 0.3)
                 
                 switch style {
                 case .dots:
-                    dotGrid(geometry: geometry)
+                    dotGrid
                 case .lines:
-                    lineGrid(geometry: geometry)
+                    lineGrid
                 case .none:
                     EmptyView()
                 }
@@ -21,12 +35,11 @@ struct CanvasBackground: View {
         }
     }
     
-    @ViewBuilder
-    private func dotGrid(geometry: GeometryProxy) -> some View {
+    private var dotGrid: some View {
         let spacing: CGFloat = 30 * scale
         let dotSize: CGFloat = max(1, 2 * scale)
         
-        Canvas { context, size in
+        return Canvas { context, size in
             let offsetX = spacing / 2
             let offsetY = spacing / 2
             
@@ -40,18 +53,17 @@ struct CanvasBackground: View {
                     )
                     context.fill(
                         Path(ellipseIn: rect),
-                        with: .color(.white.opacity(0.15))
+                        with: .color(.white.opacity(0.14))
                     )
                 }
             }
         }
     }
     
-    @ViewBuilder
-    private func lineGrid(geometry: GeometryProxy) -> some View {
+    private var lineGrid: some View {
         let spacing: CGFloat = 50 * scale
         
-        Canvas { context, size in
+        return Canvas { context, size in
             context.stroke(
                 Path { path in
                     var x: CGFloat = spacing / 2
@@ -68,7 +80,7 @@ struct CanvasBackground: View {
                         y += spacing
                     }
                 },
-                with: .color(.white.opacity(0.08)),
+                with: .color(.white.opacity(0.09)),
                 lineWidth: max(0.5, 1 * scale)
             )
         }

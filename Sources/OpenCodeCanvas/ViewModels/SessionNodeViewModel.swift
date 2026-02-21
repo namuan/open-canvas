@@ -5,6 +5,8 @@ import Combine
 @MainActor
 @Observable
 final class SessionNodeViewModel {
+    private static let defaultModelID = "github-copilot/gpt-4o"
+    
     let nodeID: UUID
     var sessionID: String?
     var status: NodeStatus = .disconnected
@@ -13,7 +15,7 @@ final class SessionNodeViewModel {
     var errorMessage: String?
     var streamingMessageID: String?
     var pendingPermission: PermissionRequestedData?
-    var selectedModel: String?
+    var selectedModel: String? = SessionNodeViewModel.defaultModelID
     
     private let serverManager = OpenCodeServerManager.shared
     private var cancellables = Set<AnyCancellable>()
