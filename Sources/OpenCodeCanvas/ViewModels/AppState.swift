@@ -13,6 +13,7 @@ final class AppState {
     var sidebarVisible: Bool = true
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
+    var nodeSpacing: CGFloat = 40
     var isConnectionMode: Bool = false
     var connectionSourceNodeID: UUID?
     
@@ -56,6 +57,7 @@ final class AppState {
         sidebarVisible = persistenceService.loadSidebarVisible()
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
+        nodeSpacing = persistenceService.loadNodeSpacing()
         
         AppLogger.shared.setLogLevel(persistenceService.loadLogLevel())
     }
@@ -105,13 +107,42 @@ final class AppState {
     }
     
     func addNode(at position: CGPoint? = nil) {
-        let jitterX = CGFloat.random(in: -50...50)
-        let jitterY = CGFloat.random(in: -50...50)
-        
-        let nodePosition = position ?? CGPoint(
-            x: -canvasOffset.width / canvasScale + jitterX,
-            y: -canvasOffset.height / canvasScale + jitterY
+        let centerPosition = CGPoint(
+            x: -canvasOffset.width / canvasScale,
+            y: -canvasOffset.height / canvasScale
         )
+
+        var nodePosition = position ?? centerPosition
+        let horizontalGap = nodeSpacing
+
+        if position == nil,
+           let existingNodeID = selectedNodeID ?? nodes.last?.id,
+           let existingNodeIndex = nodes.firstIndex(where: { $0.id == existingNodeID }) {
+            let existingNode = nodes[existingNodeIndex]
+            let shiftAmount = (existingNode.isMinimized ? 280 : existingNode.size.width) + horizontalGap
+            let centerTolerance: CGFloat = 24 / max(canvasScale, 0.3)
+            let isExistingCentered =
+                abs(existingNode.position.x - centerPosition.x) <= centerTolerance &&
+                abs(existingNode.position.y - centerPosition.y) <= centerTolerance
+
+            if isExistingCentered {
+                nodePosition = CGPoint(
+                    x: existingNode.position.x + shiftAmount,
+                    y: existingNode.position.y
+                )
+
+                let newOffset = CGSize(
+                    width: canvasOffset.width - shiftAmount * canvasScale,
+                    height: canvasOffset.height
+                )
+                updateCanvasOffset(newOffset)
+            } else {
+                nodes[existingNodeIndex].position = CGPoint(
+                    x: centerPosition.x - shiftAmount,
+                    y: centerPosition.y
+                )
+            }
+        }
         
         let node = CanvasNode(
             title: "Session \(nodes.count + 1)",
@@ -316,6 +347,12 @@ final class AppState {
     func updateDefaultNodeColor(_ color: NodeColor) {
         defaultNodeColor = color
         persistenceService.saveDefaultNodeColor(color)
+    }
+
+    func updateNodeSpacing(_ spacing: CGFloat) {
+        let clamped = min(160, max(0, spacing))
+        nodeSpacing = clamped
+        persistenceService.saveNodeSpacing(clamped)
     }
     
     func clearCanvas() {

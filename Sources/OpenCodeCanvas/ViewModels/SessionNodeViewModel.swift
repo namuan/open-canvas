@@ -286,8 +286,32 @@ final class SessionNodeViewModel {
     
     private func handleStreamingContent(messageID: String, content: String) {
         if let index = messages.firstIndex(where: { $0.id == messageID }) {
-            messages[index].content += content
+            let merged = SessionNodeViewModel.mergeStreamingContent(
+                current: messages[index].content,
+                incoming: content
+            )
+            messages[index].content = merged
         } else {
+            if let placeholderID = streamingMessageID,
+               let placeholderIndex = messages.firstIndex(where: { $0.id == placeholderID }),
+               messages[placeholderIndex].role == .assistant,
+               messages[placeholderIndex].isStreaming {
+                let merged = SessionNodeViewModel.mergeStreamingContent(
+                    current: messages[placeholderIndex].content,
+                    incoming: content
+                )
+                messages[placeholderIndex] = ChatMessage(
+                    id: messageID,
+                    role: .assistant,
+                    content: merged,
+                    createdAt: messages[placeholderIndex].createdAt,
+                    toolUse: messages[placeholderIndex].toolUse,
+                    isStreaming: true
+                )
+                streamingMessageID = messageID
+                return
+            }
+
             let newMessage = ChatMessage(
                 id: messageID,
                 role: .assistant,
@@ -298,6 +322,26 @@ final class SessionNodeViewModel {
             messages.append(newMessage)
             streamingMessageID = messageID
         }
+    }
+
+    static func mergeStreamingContent(current: String, incoming: String) -> String {
+        guard !incoming.isEmpty else { return current }
+        guard !current.isEmpty else { return incoming }
+
+        if current.hasSuffix(incoming) {
+            return current
+        }
+
+        let maxOverlap = min(current.count, incoming.count)
+        for overlap in stride(from: maxOverlap, through: 1, by: -1) {
+            let currentSuffix = current.suffix(overlap)
+            let incomingPrefix = incoming.prefix(overlap)
+            if currentSuffix == incomingPrefix {
+                return current + incoming.dropFirst(overlap)
+            }
+        }
+
+        return current + incoming
     }
     
     private func handleCompletedMessage(messageID: String, content: String, role: MessageRole) {

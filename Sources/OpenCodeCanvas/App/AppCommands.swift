@@ -16,13 +16,6 @@ struct AppCommands: Commands {
             }
         }
         
-        CommandGroup(replacing: .appSettings) {
-            Button("Settings...") {
-                NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
-            }
-            .keyboardShortcut(",", modifiers: .command)
-        }
-        
         CommandGroup(replacing: .newItem) {
             Button("New Node") {
                 appState.addNode()

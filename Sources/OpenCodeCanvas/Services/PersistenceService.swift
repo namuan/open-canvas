@@ -18,6 +18,7 @@ final class PersistenceService {
         static let canvasOffset = "canvasOffset"
         static let canvasScale = "canvasScale"
         static let nodeConnections = "nodeConnections"
+        static let nodeSpacing = "nodeSpacing"
     }
     
     private init() {}
@@ -190,5 +191,15 @@ final class PersistenceService {
     func loadCanvasScale() -> CGFloat {
         let scale = defaults.double(forKey: Keys.canvasScale)
         return scale > 0 ? scale : 1.0
+    }
+
+    func saveNodeSpacing(_ spacing: CGFloat) {
+        defaults.set(Double(spacing), forKey: Keys.nodeSpacing)
+        log(.debug, category: .storage, "Saved node spacing: \(spacing)")
+    }
+
+    func loadNodeSpacing() -> CGFloat {
+        let spacing = defaults.double(forKey: Keys.nodeSpacing)
+        return spacing > 0 ? CGFloat(spacing) : 40
     }
 }

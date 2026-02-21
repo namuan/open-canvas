@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @State private var viewModel = SettingsViewModel()
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
     
     var body: some View {
         TabView {
@@ -94,6 +95,7 @@ struct ServerSettingsTab: View {
 
 struct AppearanceSettingsTab: View {
     @Bindable var viewModel: SettingsViewModel
+    @Environment(AppState.self) private var appState
     
     var body: some View {
         Form {
@@ -119,10 +121,32 @@ struct AppearanceSettingsTab: View {
                         }
                     )
                 }
+
+                HStack {
+                    Text("New Node Gap")
+                    Spacer()
+                    Text("\(Int(viewModel.nodeSpacing)) pt")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 72, alignment: .trailing)
+                }
+
+                Slider(value: spacingBinding, in: 0...160, step: 4)
             }
         }
         .formStyle(.grouped)
         .padding()
+    }
+
+    private var spacingBinding: Binding<CGFloat> {
+        Binding(
+            get: { viewModel.nodeSpacing },
+            set: { newValue in
+                viewModel.nodeSpacing = newValue
+                viewModel.saveNodeSpacing()
+                appState.updateNodeSpacing(newValue)
+            }
+        )
     }
 }
 

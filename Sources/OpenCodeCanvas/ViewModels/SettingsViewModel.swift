@@ -7,6 +7,7 @@ final class SettingsViewModel {
     var serverURL: String = "http://localhost:4096"
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
+    var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
     
     private let persistenceService = PersistenceService.shared
@@ -16,6 +17,7 @@ final class SettingsViewModel {
         serverURL = persistenceService.loadServerURL()
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
+        nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
     }
     
@@ -30,6 +32,10 @@ final class SettingsViewModel {
     
     func saveDefaultNodeColor() {
         persistenceService.saveDefaultNodeColor(defaultNodeColor)
+    }
+
+    func saveNodeSpacing() {
+        persistenceService.saveNodeSpacing(nodeSpacing)
     }
     
     func saveLogLevel() {
