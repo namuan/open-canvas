@@ -60,6 +60,20 @@ struct CanvasView: View {
                 canvasScaleControl
                     .padding(18)
             }
+            #if os(macOS)
+            .overlay {
+                TrackpadScrollCaptureView { delta in
+                    guard !isMarqueeSelecting else { return }
+
+                    let newOffset = CGSize(
+                        width: appState.canvasOffset.width + delta.width,
+                        height: appState.canvasOffset.height + delta.height
+                    )
+                    appState.updateCanvasOffset(newOffset)
+                }
+                .allowsHitTesting(false)
+            }
+            #endif
             .gesture(canvasDragGesture)
             .simultaneousGesture(canvasZoomGesture)
             .simultaneousGesture(doubleTapToAddNode(geometry: geometry))
