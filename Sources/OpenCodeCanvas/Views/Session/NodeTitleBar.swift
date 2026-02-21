@@ -8,6 +8,7 @@ struct NodeTitleBar: View {
     let sessionID: String?
     let onTitleChange: (String) -> Void
     let onMinimize: () -> Void
+    let onToggleExpand: () -> Void
     let onClose: () -> Void
     
     @State private var isEditing = false
@@ -36,9 +37,6 @@ struct NodeTitleBar: View {
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundStyle(.white)
                         .lineLimit(1)
-                        .onTapGesture(count: 2) {
-                            startTitleEdit()
-                        }
                 }
                 
                 if let sessionID {
@@ -49,6 +47,18 @@ struct NodeTitleBar: View {
             }
             
             Spacer(minLength: 0)
+
+            if !isEditing {
+                Button {
+                    startTitleEdit()
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 11, weight: .semibold))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.white.opacity(0.8))
+                .help("Rename")
+            }
             
             if let sessionID {
                 Button {
@@ -85,6 +95,10 @@ struct NodeTitleBar: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 10)
         .background(titleBarBackground)
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            onToggleExpand()
+        }
     }
     
     private var statusIcon: some View {

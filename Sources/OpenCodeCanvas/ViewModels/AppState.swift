@@ -18,6 +18,7 @@ final class AppState {
     var nodeSpacing: CGFloat = 40
     var isConnectionMode: Bool = false
     var connectionSourceNodeID: UUID?
+    private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
     
     private let serverManager = OpenCodeServerManager.shared
     private let persistenceService = PersistenceService.shared
@@ -207,6 +208,7 @@ final class AppState {
             selectedNodeID = nil
         }
         selectedNodeIDs.remove(id)
+        maximizedNodeSnapshots.removeValue(forKey: id)
         if selectedNodeID == nil, let fallbackID = selectedNodeIDs.first {
             selectedNodeID = fallbackID
         }
@@ -240,6 +242,49 @@ final class AppState {
             saveNodes()
         }
     }
+
+    func isNodeMaximized(_ id: UUID) -> Bool {
+        maximizedNodeSnapshots[id] != nil
+    }
+
+    func toggleNodeMaximized(id: UUID) {
+        guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
+
+        if let snapshot = maximizedNodeSnapshots[id] {
+            nodes[index].position = snapshot.position
+            nodes[index].size = snapshot.size
+            nodes[index].isMinimized = snapshot.isMinimized
+            maximizedNodeSnapshots.removeValue(forKey: id)
+            saveNodes()
+            log(.info, category: .canvas, "Restored node \(id) from maximized state")
+            return
+        }
+
+        guard canvasViewportSize.width > 0, canvasViewportSize.height > 0 else { return }
+
+        maximizedNodeSnapshots[id] = NodeFrameSnapshot(
+            position: nodes[index].position,
+            size: nodes[index].size,
+            isMinimized: nodes[index].isMinimized
+        )
+
+        let viewportInset: CGFloat = 20
+        let targetSize = CGSize(
+            width: max(280, (canvasViewportSize.width - viewportInset * 2) / canvasScale),
+            height: max(360, (canvasViewportSize.height - viewportInset * 2) / canvasScale)
+        )
+        let viewportWorldCenter = CGPoint(
+            x: -canvasOffset.width / canvasScale,
+            y: -canvasOffset.height / canvasScale
+        )
+
+        nodes[index].isMinimized = false
+        nodes[index].size = targetSize
+        nodes[index].position = viewportWorldCenter
+
+        saveNodes()
+        log(.info, category: .canvas, "Maximized node \(id)")
+    }
     
     func updateNodeTitle(id: UUID, title: String) {
         guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
@@ -261,7 +306,11 @@ final class AppState {
     
     func toggleNodeMinimized(id: UUID) {
         guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
-        
+
+        if nodes[index].isMinimized == false, maximizedNodeSnapshots[id] != nil {
+            maximizedNodeSnapshots.removeValue(forKey: id)
+        }
+
         nodes[index].isMinimized.toggle()
         saveNodes()
         
@@ -598,4 +647,10 @@ final class AppState {
     private func saveConnections() {
         persistenceService.saveConnections(connections)
     }
+}
+
+private struct NodeFrameSnapshot {
+    let position: CGPoint
+    let size: CGSize
+    let isMinimized: Bool
 }

@@ -108,6 +108,12 @@ struct SessionNodeView: View {
                     }
                     triggerSelectionHaptic()
                 },
+                onToggleExpand: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        appState.toggleNodeMaximized(id: node.id)
+                    }
+                    triggerSelectionHaptic()
+                },
                 onClose: {
                     Task {
                         await appState.removeNode(id: node.id)
@@ -272,10 +278,12 @@ struct SessionNodeView: View {
     private var dragGesture: some Gesture {
         DragGesture()
             .onChanged { value in
+                guard !appState.isNodeMaximized(node.id) else { return }
                 isDragging = true
                 dragOffset = value.translation
             }
             .onEnded { value in
+                guard !appState.isNodeMaximized(node.id) else { return }
                 isDragging = false
                 dragOffset = .zero
                 

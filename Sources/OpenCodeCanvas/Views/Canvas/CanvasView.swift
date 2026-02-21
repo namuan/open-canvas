@@ -53,10 +53,6 @@ struct CanvasView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
-            .overlay(alignment: .topLeading) {
-                canvasHeader
-                    .padding(16)
-            }
             .overlay(alignment: .bottomTrailing) {
                 canvasScaleControl
                     .padding(18)
@@ -108,30 +104,6 @@ struct CanvasView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will remove all session nodes. This action cannot be undone.")
-        }
-    }
-    
-    private var canvasHeader: some View {
-        HStack(spacing: 14) {
-            Label("Canvas", systemImage: "view.3d")
-                .font(.system(size: 14, weight: .semibold))
-            
-            Divider()
-                .frame(height: 14)
-            
-            Label("\(appState.nodes.count)", systemImage: "square.stack.3d.up")
-                .font(.system(size: 12, weight: .medium))
-            
-            Label("\(appState.activeSessionCount)", systemImage: "bolt.horizontal.fill")
-                .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(.green)
-        }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: .rect(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(.white.opacity(0.14), lineWidth: 1)
         }
     }
     
@@ -208,6 +180,10 @@ struct CanvasView: View {
     private func doubleTapToAddNode(geometry: GeometryProxy) -> some Gesture {
         SpatialTapGesture(count: 2)
             .onEnded { value in
+                guard !isPointInsideAnyNode(value.location, in: geometry.size) else {
+                    return
+                }
+
                 let worldPosition = CGPoint(
                     x: (value.location.x - geometry.size.width / 2 - appState.canvasOffset.width) / appState.canvasScale,
                     y: (value.location.y - geometry.size.height / 2 - appState.canvasOffset.height) / appState.canvasScale
@@ -217,6 +193,30 @@ struct CanvasView: View {
                     appState.addNode(at: worldPosition)
                 }
             }
+    }
+
+    private func isPointInsideAnyNode(_ point: CGPoint, in viewportSize: CGSize) -> Bool {
+        for node in appState.nodes {
+            let width = (node.isMinimized ? 280 : node.size.width) * appState.canvasScale
+            let height = (node.isMinimized ? 72 : node.size.height) * appState.canvasScale
+            let center = CGPoint(
+                x: node.position.x * appState.canvasScale + appState.canvasOffset.width + viewportSize.width / 2,
+                y: node.position.y * appState.canvasScale + appState.canvasOffset.height + viewportSize.height / 2
+            )
+
+            let rect = CGRect(
+                x: center.x - width / 2,
+                y: center.y - height / 2,
+                width: width,
+                height: height
+            )
+
+            if rect.contains(point) {
+                return true
+            }
+        }
+
+        return false
     }
 
     private var marqueeRect: CGRect? {
