@@ -28,7 +28,7 @@ struct CanvasView: View {
                     offset: appState.canvasOffset
                 )
                 
-                ForEach(appState.nodes) { node in
+                ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
                     SessionNodeView(node: node)
                         .position(
                             x: node.position.x * appState.canvasScale + appState.canvasOffset.width + geometry.size.width / 2,
@@ -43,6 +43,7 @@ struct CanvasView: View {
                             color: appState.isNodeSelected(node.id) ? node.color.primaryColor.opacity(0.25) : .clear,
                             radius: 22
                         )
+                        .zIndex(zIndexForNode(node, index: index))
                         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeID)
                         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeIDs)
                 }
@@ -222,6 +223,16 @@ struct CanvasView: View {
     private var marqueeRect: CGRect? {
         guard let start = marqueeStartPoint, let current = marqueeCurrentPoint else { return nil }
         return normalizedRect(from: start, to: current)
+    }
+
+    private func zIndexForNode(_ node: CanvasNode, index: Int) -> Double {
+        if appState.isNodeMaximized(node.id) {
+            return 10_000
+        }
+        if appState.isNodeSelected(node.id) {
+            return 1_000 + Double(index)
+        }
+        return Double(index)
     }
 
     private func marqueeRectOverlay(_ rect: CGRect) -> some View {
