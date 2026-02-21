@@ -8,8 +8,10 @@ final class AppState {
     var nodes: [CanvasNode] = []
     var connections: [NodeConnection] = []
     var selectedNodeID: UUID?
+    var selectedNodeIDs: Set<UUID> = []
     var canvasOffset: CGSize = .zero
     var canvasScale: CGFloat = 1.0
+    var canvasViewportSize: CGSize = .zero
     var sidebarVisible: Bool = true
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
@@ -26,7 +28,17 @@ final class AppState {
     }
     
     var selectedNode: CanvasNode? {
-        nodes.first { $0.id == selectedNodeID }
+        if let selectedNodeID {
+            return nodes.first { $0.id == selectedNodeID }
+        }
+        if let firstSelectedID = selectedNodeIDs.first {
+            return nodes.first { $0.id == firstSelectedID }
+        }
+        return nil
+    }
+
+    var hasSelection: Bool {
+        !effectiveSelectedNodeIDs.isEmpty
     }
     
     func initialize() async {
@@ -107,39 +119,50 @@ final class AppState {
     }
     
     func addNode(at position: CGPoint? = nil) {
-        let centerPosition = CGPoint(
-            x: -canvasOffset.width / canvasScale,
-            y: -canvasOffset.height / canvasScale
-        )
-
-        var nodePosition = position ?? centerPosition
+        let defaultNodeSize = CanvasNode().size
         let horizontalGap = nodeSpacing
+        let spawnPadding: CGFloat = 32
+        let shouldFocusNewNode = (position == nil)
 
-        if position == nil,
-           let existingNodeID = selectedNodeID ?? nodes.last?.id,
-           let existingNodeIndex = nodes.firstIndex(where: { $0.id == existingNodeID }) {
-            let existingNode = nodes[existingNodeIndex]
-            let shiftAmount = (existingNode.isMinimized ? 280 : existingNode.size.width) + horizontalGap
-            let centerTolerance: CGFloat = 24 / max(canvasScale, 0.3)
-            let isExistingCentered =
-                abs(existingNode.position.x - centerPosition.x) <= centerTolerance &&
-                abs(existingNode.position.y - centerPosition.y) <= centerTolerance
+        let topLeftSpawnPosition: CGPoint = {
+            guard canvasViewportSize.width > 0, canvasViewportSize.height > 0 else {
+                return CGPoint(
+                    x: -canvasOffset.width / canvasScale,
+                    y: -canvasOffset.height / canvasScale
+                )
+            }
 
-            if isExistingCentered {
+            let worldTopLeft = CGPoint(
+                x: (-canvasOffset.width - canvasViewportSize.width / 2) / canvasScale,
+                y: (-canvasOffset.height - canvasViewportSize.height / 2) / canvasScale
+            )
+
+            return CGPoint(
+                x: worldTopLeft.x + spawnPadding + defaultNodeSize.width / 2,
+                y: worldTopLeft.y + spawnPadding + defaultNodeSize.height / 2
+            )
+        }()
+
+        var nodePosition = position ?? topLeftSpawnPosition
+
+        if position == nil {
+            let newWidth = defaultNodeSize.width
+            let spawnLeftEdge = topLeftSpawnPosition.x - newWidth / 2
+            let rowTolerance: CGFloat = 120
+
+            let rowNodes = nodes.filter { abs($0.position.y - topLeftSpawnPosition.y) <= rowTolerance }
+            let candidateNodes = rowNodes.filter {
+                let rightEdge = $0.position.x + nodeWidth(for: $0) / 2
+                return rightEdge >= spawnLeftEdge - 1
+            }
+
+            if let anchorNode = candidateNodes.max(by: {
+                ($0.position.x + nodeWidth(for: $0) / 2) < ($1.position.x + nodeWidth(for: $1) / 2)
+            }) {
+                let shiftAmount = (nodeWidth(for: anchorNode) / 2) + horizontalGap + (newWidth / 2)
                 nodePosition = CGPoint(
-                    x: existingNode.position.x + shiftAmount,
-                    y: existingNode.position.y
-                )
-
-                let newOffset = CGSize(
-                    width: canvasOffset.width - shiftAmount * canvasScale,
-                    height: canvasOffset.height
-                )
-                updateCanvasOffset(newOffset)
-            } else {
-                nodes[existingNodeIndex].position = CGPoint(
-                    x: centerPosition.x - shiftAmount,
-                    y: centerPosition.y
+                    x: anchorNode.position.x + shiftAmount,
+                    y: topLeftSpawnPosition.y
                 )
             }
         }
@@ -151,7 +174,12 @@ final class AppState {
         )
         
         nodes.append(node)
-        selectedNodeID = node.id
+        selectNode(node.id)
+
+        if shouldFocusNewNode {
+            focusCanvas(onWorldPosition: nodePosition, nodeSize: defaultNodeSize, padding: spawnPadding)
+        }
+
         saveNodes()
         
         log(.info, category: .canvas, "Added node \(node.id) at \(nodePosition)")
@@ -175,6 +203,10 @@ final class AppState {
         
         if selectedNodeID == id {
             selectedNodeID = nil
+        }
+        selectedNodeIDs.remove(id)
+        if selectedNodeID == nil, let fallbackID = selectedNodeIDs.first {
+            selectedNodeID = fallbackID
         }
         
         saveNodes()
@@ -275,22 +307,33 @@ final class AppState {
     }
     
     func autoLayout() {
+        let targetIDs = effectiveSelectedNodeIDs
+        let targetIndices: [Int]
+
+        if targetIDs.isEmpty {
+            targetIndices = Array(nodes.indices)
+        } else {
+            targetIndices = nodes.indices.filter { targetIDs.contains(nodes[$0].id) }
+        }
+
+        guard !targetIndices.isEmpty else { return }
+
         let padding: CGFloat = 40
-        let cols = Int(ceil(sqrt(Double(nodes.count))))
+        let cols = Int(ceil(sqrt(Double(targetIndices.count))))
         
-        for (index, _) in nodes.enumerated() {
+        for (index, nodeIndex) in targetIndices.enumerated() {
             let row = index / cols
             let col = index % cols
             
             let x = CGFloat(col) * (320 + padding)
             let y = CGFloat(row) * (480 + padding)
             
-            nodes[index].position = CGPoint(x: x, y: y)
+            nodes[nodeIndex].position = CGPoint(x: x, y: y)
         }
         
         saveNodes()
         
-        log(.info, category: .canvas, "Auto-layout applied to \(nodes.count) nodes")
+        log(.info, category: .canvas, "Auto-layout applied to \(targetIndices.count) nodes")
     }
     
     func resetView() {
@@ -321,6 +364,11 @@ final class AppState {
     func updateCanvasScale(_ scale: CGFloat) {
         canvasScale = scale
         persistenceService.saveCanvasScale(scale)
+    }
+
+    func updateCanvasViewportSize(_ size: CGSize) {
+        guard canvasViewportSize != size else { return }
+        canvasViewportSize = size
     }
     
     func toggleSidebar() {
@@ -366,7 +414,7 @@ final class AppState {
         
         nodes.removeAll()
         connections.removeAll()
-        selectedNodeID = nil
+        clearSelection()
         
         saveNodes()
         saveConnections()
@@ -384,6 +432,7 @@ final class AppState {
         )
         
         nodes.append(newNode)
+        selectNode(newNode.id)
         saveNodes()
         
         log(.info, category: .canvas, "Duplicated node \(id) to \(newNode.id)")
@@ -395,10 +444,77 @@ final class AppState {
         if let currentID = selectedNodeID,
            let currentIndex = nodes.firstIndex(where: { $0.id == currentID }) {
             let nextIndex = (currentIndex + 1) % nodes.count
-            selectedNodeID = nodes[nextIndex].id
+            selectNode(nodes[nextIndex].id)
         } else {
-            selectedNodeID = nodes.first?.id
+            if let firstID = nodes.first?.id {
+                selectNode(firstID)
+            }
         }
+    }
+
+    func selectNode(_ id: UUID) {
+        selectedNodeID = id
+        selectedNodeIDs = [id]
+    }
+
+    func selectAllNodes() {
+        let allIDs = Set(nodes.map(\.id))
+        selectNodes(allIDs)
+        log(.info, category: .canvas, "Selected all nodes: \(allIDs.count)")
+    }
+
+    func clearSelection() {
+        selectedNodeID = nil
+        selectedNodeIDs.removeAll()
+    }
+
+    func isNodeSelected(_ id: UUID) -> Bool {
+        effectiveSelectedNodeIDs.contains(id)
+    }
+
+    func selectNodes(_ ids: Set<UUID>) {
+        selectedNodeIDs = ids
+        selectedNodeID = nodes.first(where: { ids.contains($0.id) })?.id
+    }
+
+    func deleteSelectedNodes() async {
+        let idsToDelete = Array(effectiveSelectedNodeIDs)
+        guard !idsToDelete.isEmpty else { return }
+
+        for id in idsToDelete {
+            await removeNode(id: id)
+        }
+
+        clearSelection()
+    }
+
+    private var effectiveSelectedNodeIDs: Set<UUID> {
+        if !selectedNodeIDs.isEmpty {
+            return selectedNodeIDs
+        }
+        if let selectedNodeID {
+            return [selectedNodeID]
+        }
+        return []
+    }
+
+    private func nodeWidth(for node: CanvasNode) -> CGFloat {
+        node.isMinimized ? 280 : node.size.width
+    }
+
+    private func focusCanvas(onWorldPosition worldPosition: CGPoint, nodeSize: CGSize, padding: CGFloat) {
+        guard canvasViewportSize.width > 0, canvasViewportSize.height > 0 else { return }
+
+        let desiredViewCenter = CGPoint(
+            x: padding + nodeSize.width / 2,
+            y: padding + nodeSize.height / 2
+        )
+
+        let focusedOffset = CGSize(
+            width: desiredViewCenter.x - worldPosition.x * canvasScale - canvasViewportSize.width / 2,
+            height: desiredViewCenter.y - worldPosition.y * canvasScale - canvasViewportSize.height / 2
+        )
+        updateCanvasOffset(focusedOffset)
     }
     
     private func saveNodes() {

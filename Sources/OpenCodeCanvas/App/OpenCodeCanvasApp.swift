@@ -124,7 +124,7 @@ struct MainView: View {
     
     private func overviewCard(for node: CanvasNode) -> some View {
         Button {
-            appState.selectedNodeID = node.id
+            appState.selectNode(node.id)
             selectedTab = .canvas
         } label: {
             VStack(alignment: .leading, spacing: 10) {

@@ -12,11 +12,27 @@ struct SidebarView: View {
                 } label: {
                     Label("New Session Node", systemImage: "plus.circle")
                 }
+
+                Button {
+                    appState.selectAllNodes()
+                } label: {
+                    Label("Select All Sessions", systemImage: "checklist")
+                }
+                .disabled(appState.nodes.isEmpty)
+
+                Button {
+                    Task {
+                        await appState.deleteSelectedNodes()
+                    }
+                } label: {
+                    Label("Delete Selected", systemImage: "trash")
+                }
+                .disabled(!appState.hasSelection)
                 
                 Button {
                     appState.autoLayout()
                 } label: {
-                    Label("Auto-Layout Canvas", systemImage: "square.grid.3x3")
+                    Label("Re-Layout Selection", systemImage: "square.grid.3x3")
                 }
                 
                 Button {
@@ -69,7 +85,11 @@ struct SidebarView: View {
         Binding(
             get: { appState.selectedNodeID },
             set: { newValue in
-                appState.selectedNodeID = newValue
+                if let newValue {
+                    appState.selectNode(newValue)
+                } else {
+                    appState.clearSelection()
+                }
             }
         )
     }

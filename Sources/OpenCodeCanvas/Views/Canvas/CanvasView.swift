@@ -1,9 +1,15 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct CanvasView: View {
     @Environment(AppState.self) private var appState
     @State private var isDraggingCanvas = false
     @State private var dragStartOffset: CGSize = .zero
+    @State private var isMarqueeSelecting = false
+    @State private var marqueeStartPoint: CGPoint?
+    @State private var marqueeCurrentPoint: CGPoint?
     @State private var showingSettings = false
     @State private var showingClearConfirmation = false
     
@@ -33,10 +39,15 @@ struct CanvasView: View {
                             height: node.isMinimized ? 72 : node.size.height * appState.canvasScale
                         )
                         .shadow(
-                            color: appState.selectedNodeID == node.id ? node.color.primaryColor.opacity(0.25) : .clear,
+                            color: appState.isNodeSelected(node.id) ? node.color.primaryColor.opacity(0.25) : .clear,
                             radius: 22
                         )
                         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeID)
+                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeIDs)
+                }
+
+                if let marqueeRect {
+                    marqueeRectOverlay(marqueeRect)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -53,7 +64,13 @@ struct CanvasView: View {
             .simultaneousGesture(canvasZoomGesture)
             .simultaneousGesture(doubleTapToAddNode(geometry: geometry))
             .onTapGesture {
-                appState.selectedNodeID = nil
+                appState.clearSelection()
+            }
+            .onAppear {
+                appState.updateCanvasViewportSize(geometry.size)
+            }
+            .onChange(of: geometry.size) { _, newSize in
+                appState.updateCanvasViewportSize(newSize)
             }
         }
         .toolbar {
@@ -130,6 +147,17 @@ struct CanvasView: View {
     private var canvasDragGesture: some Gesture {
         DragGesture()
             .onChanged { value in
+                if shouldUseMarqueeSelection() || isMarqueeSelecting {
+                    if !isMarqueeSelecting {
+                        isMarqueeSelecting = true
+                        marqueeStartPoint = value.startLocation
+                    }
+
+                    marqueeCurrentPoint = value.location
+                    updateMarqueeSelection()
+                    return
+                }
+
                 if !isDraggingCanvas {
                     isDraggingCanvas = true
                     dragStartOffset = appState.canvasOffset
@@ -142,6 +170,14 @@ struct CanvasView: View {
                 appState.updateCanvasOffset(newOffset)
             }
             .onEnded { _ in
+                if isMarqueeSelecting {
+                    updateMarqueeSelection()
+                    isMarqueeSelecting = false
+                    marqueeStartPoint = nil
+                    marqueeCurrentPoint = nil
+                    return
+                }
+
                 isDraggingCanvas = false
             }
     }
@@ -166,5 +202,80 @@ struct CanvasView: View {
                     appState.addNode(at: worldPosition)
                 }
             }
+    }
+
+    private var marqueeRect: CGRect? {
+        guard let start = marqueeStartPoint, let current = marqueeCurrentPoint else { return nil }
+        return normalizedRect(from: start, to: current)
+    }
+
+    private func marqueeRectOverlay(_ rect: CGRect) -> some View {
+        Rectangle()
+            .fill(Color.accentColor.opacity(0.14))
+            .overlay(
+                Rectangle()
+                    .stroke(
+                        Color.accentColor.opacity(0.9),
+                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
+                    )
+            )
+            .frame(width: rect.width, height: rect.height)
+            .position(x: rect.midX, y: rect.midY)
+            .allowsHitTesting(false)
+    }
+
+    private func updateMarqueeSelection() {
+        guard let rectInView = marqueeRect else {
+            appState.clearSelection()
+            return
+        }
+
+        let worldRect = worldRect(fromViewRect: rectInView)
+        let selectedIDs = Set(
+            appState.nodes
+                .filter { nodeWorldRect($0).intersects(worldRect) }
+                .map(\.id)
+        )
+        appState.selectNodes(selectedIDs)
+    }
+
+    private func worldRect(fromViewRect rect: CGRect) -> CGRect {
+        let topLeft = CGPoint(
+            x: (rect.minX - appState.canvasOffset.width - appState.canvasViewportSize.width / 2) / appState.canvasScale,
+            y: (rect.minY - appState.canvasOffset.height - appState.canvasViewportSize.height / 2) / appState.canvasScale
+        )
+        let bottomRight = CGPoint(
+            x: (rect.maxX - appState.canvasOffset.width - appState.canvasViewportSize.width / 2) / appState.canvasScale,
+            y: (rect.maxY - appState.canvasOffset.height - appState.canvasViewportSize.height / 2) / appState.canvasScale
+        )
+        return normalizedRect(from: topLeft, to: bottomRight)
+    }
+
+    private func nodeWorldRect(_ node: CanvasNode) -> CGRect {
+        let width = node.isMinimized ? 280 : node.size.width
+        let height = node.isMinimized ? 72 : node.size.height
+        return CGRect(
+            x: node.position.x - width / 2,
+            y: node.position.y - height / 2,
+            width: width,
+            height: height
+        )
+    }
+
+    private func normalizedRect(from start: CGPoint, to end: CGPoint) -> CGRect {
+        CGRect(
+            x: min(start.x, end.x),
+            y: min(start.y, end.y),
+            width: abs(end.x - start.x),
+            height: abs(end.y - start.y)
+        )
+    }
+
+    private func shouldUseMarqueeSelection() -> Bool {
+        #if os(macOS)
+        NSEvent.modifierFlags.contains(.shift)
+        #else
+        false
+        #endif
     }
 }

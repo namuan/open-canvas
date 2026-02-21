@@ -29,25 +29,26 @@ struct SessionNodeView: View {
         .background(nodeCardBackground)
         .overlay {
             RoundedRectangle(cornerRadius: node.isMinimized ? 18 : 22, style: .continuous)
-                .stroke(selectionStroke, lineWidth: appState.selectedNodeID == node.id ? 2 : 1)
+                .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 2 : 1)
         }
         .clipShape(.rect(cornerRadius: node.isMinimized ? 18 : 22))
         .shadow(
-            color: node.color.primaryColor.opacity(appState.selectedNodeID == node.id ? 0.32 : 0.18),
-            radius: appState.selectedNodeID == node.id ? 24 : 14,
+            color: node.color.primaryColor.opacity(appState.isNodeSelected(node.id) ? 0.32 : 0.18),
+            radius: appState.isNodeSelected(node.id) ? 24 : 14,
             y: 12
         )
         .scaleEffect(isDragging ? 1.02 : 1)
         .offset(dragOffset)
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: isDragging)
         .animation(.easeInOut(duration: 0.2), value: appState.selectedNodeID)
+        .animation(.easeInOut(duration: 0.2), value: appState.selectedNodeIDs)
         .gesture(dragGesture)
         .simultaneousGesture(longPressGesture)
         .contextMenu {
             nodeContextMenu
         }
         .onTapGesture {
-            appState.selectedNodeID = node.id
+            appState.selectNode(node.id)
             triggerSelectionHaptic()
         }
         .onAppear {
@@ -83,8 +84,8 @@ struct SessionNodeView: View {
     private var selectionStroke: LinearGradient {
         LinearGradient(
             colors: [
-                .white.opacity(appState.selectedNodeID == node.id ? 0.75 : 0.35),
-                node.color.primaryColor.opacity(appState.selectedNodeID == node.id ? 0.9 : 0.45)
+                .white.opacity(appState.isNodeSelected(node.id) ? 0.75 : 0.35),
+                node.color.primaryColor.opacity(appState.isNodeSelected(node.id) ? 0.9 : 0.45)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -290,7 +291,7 @@ struct SessionNodeView: View {
         LongPressGesture(minimumDuration: 0.2)
             .onEnded { _ in
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.65)) {
-                    appState.selectedNodeID = node.id
+                    appState.selectNode(node.id)
                 }
                 triggerSelectionHaptic()
             }

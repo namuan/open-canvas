@@ -42,7 +42,7 @@ struct CanvasCommands: Commands {
             }
             .keyboardShortcut("n", modifiers: .command)
             
-            Button("Auto Layout") {
+            Button("Re-Layout") {
                 appState.autoLayout()
             }
             .keyboardShortcut("l", modifiers: [.command, .shift])
@@ -79,15 +79,27 @@ struct NodeCommands: Commands {
     
     var body: some Commands {
         CommandMenu("Node") {
-            Button("Close Selected Node") {
-                if let nodeID = appState.selectedNodeID {
-                    Task {
-                        await appState.removeNode(id: nodeID)
-                    }
+            Button("Select All Nodes") {
+                appState.selectAllNodes()
+            }
+            .keyboardShortcut("a", modifiers: .command)
+            .disabled(appState.nodes.isEmpty)
+
+            Button("Clear Selection") {
+                appState.clearSelection()
+            }
+            .keyboardShortcut(.escape, modifiers: [])
+            .disabled(!appState.hasSelection)
+
+            Divider()
+
+            Button("Delete Selected Nodes") {
+                Task {
+                    await appState.deleteSelectedNodes()
                 }
             }
             .keyboardShortcut("w", modifiers: .command)
-            .disabled(appState.selectedNodeID == nil)
+            .disabled(!appState.hasSelection)
             
             Button("Duplicate Selected Node") {
                 if let nodeID = appState.selectedNodeID {
