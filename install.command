@@ -7,6 +7,9 @@ APP_NAME="OpenCodeCanvas"
 APP_BUNDLE="$APP_NAME.app"
 DEST_DIR="$HOME/Applications"
 OPEN_AFTER_INSTALL=false
+ICON_SOURCE="$SCRIPT_DIR/assets/icon.png"
+ICONSET_DIR="$SCRIPT_DIR/AppIcon.iconset"
+ICNS_FILE="$APP_BUNDLE/Contents/Resources/AppIcon.icns"
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -30,7 +33,7 @@ echo ""
 
 cd "$SCRIPT_DIR"
 
-echo "[1/4] Building with Swift Package Manager..."
+echo "[1/5] Building with Swift Package Manager..."
 swift build -c release 2>&1 | while read -r line; do
     echo "  $line"
 done
@@ -41,7 +44,7 @@ if [ ! -f ".build/release/$APP_NAME" ]; then
 fi
 
 echo ""
-echo "[2/4] Creating application bundle..."
+echo "[2/5] Creating application bundle..."
 
 # Remove old bundle if exists
 rm -rf "$APP_BUNDLE"
@@ -94,7 +97,49 @@ EOF
 # Create PkgInfo
 echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
-echo "[3/4] Installing to $DEST_DIR..."
+echo "[3/5] Generating application icon..."
+
+if [ ! -f "$ICON_SOURCE" ]; then
+    echo "Error: Icon source not found at $ICON_SOURCE"
+    exit 1
+fi
+
+if ! command -v iconutil >/dev/null 2>&1; then
+    echo "Error: iconutil is required to convert the icon; please install Xcode command line tools."
+    exit 1
+fi
+
+rm -rf "$ICONSET_DIR"
+mkdir -p "$ICONSET_DIR"
+
+ICON_SPECS=(
+    "16 icon_16x16.png 1"
+    "16 icon_16x16@2x.png 2"
+    "32 icon_32x32.png 1"
+    "32 icon_32x32@2x.png 2"
+    "64 icon_64x64.png 1"
+    "64 icon_64x64@2x.png 2"
+    "128 icon_128x128.png 1"
+    "128 icon_128x128@2x.png 2"
+    "256 icon_256x256.png 1"
+    "256 icon_256x256@2x.png 2"
+    "512 icon_512x512.png 1"
+    "512 icon_512x512@2x.png 2"
+    "1024 icon_1024x1024.png 1"
+)
+
+for spec in "${ICON_SPECS[@]}"; do
+    read -r size filename scale <<< "$spec"
+    scale=${scale:-1}
+    pixel_size=$((size * scale))
+    sips -z "$pixel_size" "$pixel_size" "$ICON_SOURCE" --out "$ICONSET_DIR/$filename" >/dev/null
+done
+
+iconutil -c icns "$ICONSET_DIR" -o "$ICNS_FILE"
+rm -rf "$ICONSET_DIR"
+
+echo "[4/5] Installing to $DEST_DIR..."
+
 
 # Create ~/Applications if it doesn't exist
 mkdir -p "$DEST_DIR"
@@ -105,7 +150,7 @@ rm -rf "$DEST_DIR/$APP_BUNDLE"
 # Copy to Applications
 cp -R "$APP_BUNDLE" "$DEST_DIR/"
 
-echo "[4/4] Cleaning up..."
+echo "[5/5] Cleaning up..."
 rm -rf "$APP_BUNDLE"
 
 echo ""

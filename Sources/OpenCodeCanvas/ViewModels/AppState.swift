@@ -320,15 +320,36 @@ final class AppState {
 
         let padding: CGFloat = 40
         let cols = Int(ceil(sqrt(Double(targetIndices.count))))
-        
+
+        var colWidths = Array(repeating: CGFloat(0), count: cols)
+        let rowCount = Int(ceil(Double(targetIndices.count) / Double(cols)))
+        var rowHeights = Array(repeating: CGFloat(0), count: rowCount)
+
         for (index, nodeIndex) in targetIndices.enumerated() {
             let row = index / cols
             let col = index % cols
-            
-            let x = CGFloat(col) * (320 + padding)
-            let y = CGFloat(row) * (480 + padding)
-            
-            nodes[nodeIndex].position = CGPoint(x: x, y: y)
+            colWidths[col] = max(colWidths[col], nodeWidth(for: nodes[nodeIndex]))
+            rowHeights[row] = max(rowHeights[row], nodeHeight(for: nodes[nodeIndex]))
+        }
+
+        var colCenterX = Array(repeating: CGFloat(0), count: cols)
+        var runningX: CGFloat = 0
+        for col in 0..<cols {
+            colCenterX[col] = runningX + colWidths[col] / 2
+            runningX += colWidths[col] + padding
+        }
+
+        var rowCenterY = Array(repeating: CGFloat(0), count: rowCount)
+        var runningY: CGFloat = 0
+        for row in 0..<rowCount {
+            rowCenterY[row] = runningY + rowHeights[row] / 2
+            runningY += rowHeights[row] + padding
+        }
+
+        for (index, nodeIndex) in targetIndices.enumerated() {
+            let row = index / cols
+            let col = index % cols
+            nodes[nodeIndex].position = CGPoint(x: colCenterX[col], y: rowCenterY[row])
         }
 
         fitNodesInViewport(nodeIndices: targetIndices)
