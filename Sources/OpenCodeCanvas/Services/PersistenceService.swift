@@ -1,0 +1,194 @@
+import Foundation
+import SwiftUI
+
+@MainActor
+@Observable
+final class PersistenceService {
+    static let shared = PersistenceService()
+    
+    private let defaults = UserDefaults.standard
+    
+    private enum Keys {
+        static let canvasNodes = "canvasNodes"
+        static let serverURL = "serverURL"
+        static let sidebarVisible = "sidebarVisible"
+        static let canvasBackgroundStyle = "canvasBackgroundStyle"
+        static let defaultNodeColor = "defaultNodeColor"
+        static let logLevel = "logLevel"
+        static let canvasOffset = "canvasOffset"
+        static let canvasScale = "canvasScale"
+        static let nodeConnections = "nodeConnections"
+    }
+    
+    private init() {}
+    
+    func saveNodes(_ nodes: [CanvasNode]) {
+        let nodeDicts = nodes.map { node -> [String: Any] in
+            return [
+                "id": node.id.uuidString,
+                "title": node.title,
+                "x": node.position.x,
+                "y": node.position.y,
+                "sessionID": node.sessionID ?? "",
+                "color": node.color.rawValue,
+                "minimized": node.isMinimized,
+                "width": node.size.width,
+                "height": node.size.height
+            ]
+        }
+        
+        defaults.set(nodeDicts, forKey: Keys.canvasNodes)
+        log(.debug, category: .storage, "Saved \(nodes.count) nodes")
+    }
+    
+    func loadNodes() -> [CanvasNode] {
+        guard let nodeDicts = defaults.array(forKey: Keys.canvasNodes) as? [[String: Any]] else {
+            return []
+        }
+        
+        let nodes = nodeDicts.compactMap { dict -> CanvasNode? in
+            guard let idString = dict["id"] as? String,
+                  let id = UUID(uuidString: idString),
+                  let title = dict["title"] as? String,
+                  let x = dict["x"] as? CGFloat,
+                  let y = dict["y"] as? CGFloat,
+                  let colorRaw = dict["color"] as? String,
+                  let color = NodeColor(rawValue: colorRaw) else {
+                return nil
+            }
+            
+            let sessionID = dict["sessionID"] as? String
+            let minimized = dict["minimized"] as? Bool ?? false
+            let width = dict["width"] as? CGFloat ?? 320
+            let height = dict["height"] as? CGFloat ?? 480
+            
+            return CanvasNode(
+                id: id,
+                title: title,
+                position: CGPoint(x: x, y: y),
+                sessionID: sessionID?.isEmpty == false ? sessionID : nil,
+                color: color,
+                isMinimized: minimized,
+                size: CGSize(width: width, height: height)
+            )
+        }
+        
+        log(.debug, category: .storage, "Loaded \(nodes.count) nodes")
+        return nodes
+    }
+    
+    func saveConnections(_ connections: [NodeConnection]) {
+        let connectionDicts = connections.map { conn -> [String: Any] in
+            return [
+                "id": conn.id.uuidString,
+                "sourceNodeID": conn.sourceNodeID.uuidString,
+                "targetNodeID": conn.targetNodeID.uuidString
+            ]
+        }
+        
+        defaults.set(connectionDicts, forKey: Keys.nodeConnections)
+        log(.debug, category: .storage, "Saved \(connections.count) connections")
+    }
+    
+    func loadConnections() -> [NodeConnection] {
+        guard let connectionDicts = defaults.array(forKey: Keys.nodeConnections) as? [[String: Any]] else {
+            return []
+        }
+        
+        let connections = connectionDicts.compactMap { dict -> NodeConnection? in
+            guard let idString = dict["id"] as? String,
+                  let id = UUID(uuidString: idString),
+                  let sourceIDString = dict["sourceNodeID"] as? String,
+                  let sourceNodeID = UUID(uuidString: sourceIDString),
+                  let targetIDString = dict["targetNodeID"] as? String,
+                  let targetNodeID = UUID(uuidString: targetIDString) else {
+                return nil
+            }
+            
+            return NodeConnection(id: id, sourceNodeID: sourceNodeID, targetNodeID: targetNodeID)
+        }
+        
+        log(.debug, category: .storage, "Loaded \(connections.count) connections")
+        return connections
+    }
+    
+    func saveServerURL(_ url: String) {
+        defaults.set(url, forKey: Keys.serverURL)
+        log(.debug, category: .storage, "Saved server URL: \(url)")
+    }
+    
+    func loadServerURL() -> String {
+        defaults.string(forKey: Keys.serverURL) ?? "http://localhost:4097"
+    }
+    
+    func saveSidebarVisible(_ visible: Bool) {
+        defaults.set(visible, forKey: Keys.sidebarVisible)
+        log(.debug, category: .storage, "Saved sidebar visible: \(visible)")
+    }
+    
+    func loadSidebarVisible() -> Bool {
+        defaults.bool(forKey: Keys.sidebarVisible)
+    }
+    
+    func saveCanvasBackgroundStyle(_ style: CanvasBackgroundStyle) {
+        defaults.set(style.rawValue, forKey: Keys.canvasBackgroundStyle)
+        log(.debug, category: .storage, "Saved canvas background style: \(style.rawValue)")
+    }
+    
+    func loadCanvasBackgroundStyle() -> CanvasBackgroundStyle {
+        guard let rawValue = defaults.string(forKey: Keys.canvasBackgroundStyle),
+              let style = CanvasBackgroundStyle(rawValue: rawValue) else {
+            return .dots
+        }
+        return style
+    }
+    
+    func saveDefaultNodeColor(_ color: NodeColor) {
+        defaults.set(color.rawValue, forKey: Keys.defaultNodeColor)
+        log(.debug, category: .storage, "Saved default node color: \(color.rawValue)")
+    }
+    
+    func loadDefaultNodeColor() -> NodeColor {
+        guard let rawValue = defaults.string(forKey: Keys.defaultNodeColor),
+              let color = NodeColor(rawValue: rawValue) else {
+            return .blue
+        }
+        return color
+    }
+    
+    func saveLogLevel(_ level: LogLevel) {
+        defaults.set(level.rawValue, forKey: Keys.logLevel)
+        AppLogger.shared.setLogLevel(level)
+        log(.debug, category: .storage, "Saved log level: \(level.rawValue)")
+    }
+    
+    func loadLogLevel() -> LogLevel {
+        guard let rawValue = defaults.string(forKey: Keys.logLevel),
+              let level = LogLevel(rawValue: rawValue) else {
+            return .info
+        }
+        return level
+    }
+    
+    func saveCanvasOffset(_ offset: CGSize) {
+        defaults.set(["width": offset.width, "height": offset.height], forKey: Keys.canvasOffset)
+    }
+    
+    func loadCanvasOffset() -> CGSize {
+        guard let dict = defaults.dictionary(forKey: Keys.canvasOffset),
+              let width = dict["width"] as? CGFloat,
+              let height = dict["height"] as? CGFloat else {
+            return .zero
+        }
+        return CGSize(width: width, height: height)
+    }
+    
+    func saveCanvasScale(_ scale: CGFloat) {
+        defaults.set(scale, forKey: Keys.canvasScale)
+    }
+    
+    func loadCanvasScale() -> CGFloat {
+        let scale = defaults.double(forKey: Keys.canvasScale)
+        return scale > 0 ? scale : 1.0
+    }
+}
