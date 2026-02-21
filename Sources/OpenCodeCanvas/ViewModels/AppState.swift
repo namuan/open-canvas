@@ -330,6 +330,8 @@ final class AppState {
             
             nodes[nodeIndex].position = CGPoint(x: x, y: y)
         }
+
+        fitNodesInViewport(nodeIndices: targetIndices)
         
         saveNodes()
         
@@ -500,6 +502,50 @@ final class AppState {
 
     private func nodeWidth(for node: CanvasNode) -> CGFloat {
         node.isMinimized ? 280 : node.size.width
+    }
+
+    private func nodeHeight(for node: CanvasNode) -> CGFloat {
+        node.isMinimized ? 72 : node.size.height
+    }
+
+    private func fitNodesInViewport(nodeIndices: [Int]) {
+        guard canvasViewportSize.width > 0, canvasViewportSize.height > 0, !nodeIndices.isEmpty else {
+            return
+        }
+
+        var minX = CGFloat.infinity
+        var minY = CGFloat.infinity
+        var maxX = -CGFloat.infinity
+        var maxY = -CGFloat.infinity
+
+        for index in nodeIndices {
+            let node = nodes[index]
+            let width = nodeWidth(for: node)
+            let height = nodeHeight(for: node)
+            minX = min(minX, node.position.x - width / 2)
+            minY = min(minY, node.position.y - height / 2)
+            maxX = max(maxX, node.position.x + width / 2)
+            maxY = max(maxY, node.position.y + height / 2)
+        }
+
+        guard minX.isFinite, minY.isFinite, maxX.isFinite, maxY.isFinite else { return }
+
+        let contentWidth = max(1, maxX - minX)
+        let contentHeight = max(1, maxY - minY)
+        let inset: CGFloat = 32
+        let availableWidth = max(1, canvasViewportSize.width - inset * 2)
+        let availableHeight = max(1, canvasViewportSize.height - inset * 2)
+
+        let fittingScale = min(availableWidth / contentWidth, availableHeight / contentHeight)
+        let clampedScale = min(2.5, max(0.3, fittingScale))
+        updateCanvasScale(clampedScale)
+
+        let center = CGPoint(x: (minX + maxX) / 2, y: (minY + maxY) / 2)
+        let centeredOffset = CGSize(
+            width: -center.x * clampedScale,
+            height: -center.y * clampedScale
+        )
+        updateCanvasOffset(centeredOffset)
     }
 
     private func focusCanvas(onWorldPosition worldPosition: CGPoint, nodeSize: CGSize, padding: CGFloat) {
