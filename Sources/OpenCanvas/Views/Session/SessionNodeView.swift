@@ -94,7 +94,11 @@ struct SessionNodeView: View {
                     triggerSelectionHaptic()
                 },
                 onToggleExpand: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                    let isCurrentlyMaximized = appState.isNodeMaximized(node.id)
+                    let spring: Animation = isCurrentlyMaximized
+                        ? .spring(response: 0.36, dampingFraction: 0.82)
+                        : .spring(response: 0.44, dampingFraction: 0.7)
+                    withAnimation(spring) {
                         appState.toggleNodeMaximized(id: node.id)
                     }
                     triggerSelectionHaptic()

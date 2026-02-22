@@ -10,6 +10,7 @@ struct NodeTitleBar: View {
     
     @State private var isEditing = false
     @State private var editedTitle = ""
+    @State private var expandHighlight = false
     @FocusState private var isTitleFocused: Bool
     @Environment(\.sessionFontSize) private var sessionFontSize
     
@@ -61,8 +62,22 @@ struct NodeTitleBar: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
         .background(titleBarBackground)
+        .overlay {
+            Color.white
+                .opacity(expandHighlight ? 0.12 : 0)
+                .allowsHitTesting(false)
+                .animation(.easeOut(duration: 0.35), value: expandHighlight)
+        }
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
+            withAnimation(.easeIn(duration: 0.08)) {
+                expandHighlight = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                withAnimation(.easeOut(duration: 0.3)) {
+                    expandHighlight = false
+                }
+            }
             onToggleExpand()
         }
     }
