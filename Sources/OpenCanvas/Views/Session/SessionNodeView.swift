@@ -150,6 +150,9 @@ struct SessionNodeView: View {
             })
         }
         .frame(width: node.size.width, height: node.size.height)
+        .onHover { hovering in
+            appState.isHoveringOverSessionNode = hovering
+        }
     }
     
     private var minimizedView: some View {

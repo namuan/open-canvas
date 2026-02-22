@@ -48,7 +48,7 @@ struct CanvasView: View {
             .contentShape(Rectangle())
             #if os(macOS)
             .overlay {
-                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation) { delta in
+                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode) { delta in
                     guard !isMarqueeSelecting else { return }
 
                     let newOffset = CGSize(

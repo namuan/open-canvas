@@ -12,6 +12,7 @@ final class AppState {
     var canvasScale: CGFloat = 1.0
     var canvasViewportSize: CGSize = .zero
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
+    var isHoveringOverSessionNode: Bool = false
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var normalFontSize: CGFloat = 13
