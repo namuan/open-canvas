@@ -18,10 +18,7 @@ struct CanvasView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                CanvasBackground(
-                    style: appState.canvasBackgroundStyle,
-                    scale: appState.canvasScale
-                )
+                Color(nsColor: .windowBackgroundColor)
                 
                 ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
                     let baseWidth = node.isMinimized ? 280.0 : node.size.width
@@ -48,7 +45,7 @@ struct CanvasView: View {
             .contentShape(Rectangle())
             #if os(macOS)
             .overlay {
-                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode) { delta in
+                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode || appState.isHoveringOverSettings) { delta in
                     guard !isMarqueeSelecting else { return }
 
                     let newOffset = CGSize(

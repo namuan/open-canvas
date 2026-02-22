@@ -11,8 +11,8 @@ final class AppState {
     var canvasOffset: CGSize = .zero
     var canvasScale: CGFloat = 1.0
     var canvasViewportSize: CGSize = .zero
-    var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var isHoveringOverSessionNode: Bool = false
+    var isHoveringOverSettings: Bool = false
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var normalFontSize: CGFloat = 13
@@ -68,7 +68,6 @@ final class AppState {
         nodes = persistenceService.loadNodes()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
-        canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
         normalFontSize = persistenceService.loadNormalFontSize()
@@ -462,11 +461,6 @@ final class AppState {
     func updateCanvasViewportSize(_ size: CGSize) {
         guard canvasViewportSize != size else { return }
         canvasViewportSize = size
-    }
-    
-    func updateBackgroundStyle(_ style: CanvasBackgroundStyle) {
-        canvasBackgroundStyle = style
-        persistenceService.saveCanvasBackgroundStyle(style)
     }
     
     func updateDefaultNodeColor(_ color: NodeColor) {

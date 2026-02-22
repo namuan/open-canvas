@@ -28,6 +28,9 @@ struct SettingsView: View {
                 }
         }
         .frame(width: 540, height: 520)
+        .onHover { hovering in
+            appState.isHoveringOverSettings = hovering
+        }
         .onAppear {
             viewModel.loadSettings()
         }
@@ -99,17 +102,6 @@ struct AppearanceSettingsTab: View {
     
     var body: some View {
         Form {
-            Section("Canvas") {
-                Picker("Background Style", selection: $viewModel.canvasBackgroundStyle) {
-                    ForEach(CanvasBackgroundStyle.allCases) { style in
-                        Text(style.rawValue).tag(style)
-                    }
-                }
-                .onChange(of: viewModel.canvasBackgroundStyle) { _, _ in
-                    viewModel.saveCanvasBackgroundStyle()
-                }
-            }
-            
             Section("Nodes") {
                 HStack {
                     Text("Default Color")

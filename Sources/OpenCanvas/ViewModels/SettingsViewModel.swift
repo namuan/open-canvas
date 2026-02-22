@@ -5,7 +5,6 @@ import SwiftUI
 @Observable
 final class SettingsViewModel {
     var serverURL: String = "http://localhost:4096"
-    var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
@@ -17,7 +16,6 @@ final class SettingsViewModel {
     
     func loadSettings() {
         serverURL = persistenceService.loadServerURL()
-        canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
@@ -28,10 +26,6 @@ final class SettingsViewModel {
     func saveServerURL() {
         persistenceService.saveServerURL(serverURL)
         serverManager.configure(url: serverURL)
-    }
-    
-    func saveCanvasBackgroundStyle() {
-        persistenceService.saveCanvasBackgroundStyle(canvasBackgroundStyle)
     }
     
     func saveDefaultNodeColor() {

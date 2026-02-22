@@ -11,7 +11,6 @@ final class PersistenceService {
     private enum Keys {
         static let canvasNodes = "canvasNodes"
         static let serverURL = "serverURL"
-        static let canvasBackgroundStyle = "canvasBackgroundStyle"
         static let defaultNodeColor = "defaultNodeColor"
         static let logLevel = "logLevel"
         static let canvasOffset = "canvasOffset"
@@ -85,19 +84,6 @@ final class PersistenceService {
     
     func loadServerURL() -> String {
         defaults.string(forKey: Keys.serverURL) ?? "http://localhost:4097"
-    }
-    
-    func saveCanvasBackgroundStyle(_ style: CanvasBackgroundStyle) {
-        defaults.set(style.rawValue, forKey: Keys.canvasBackgroundStyle)
-        log(.debug, category: .storage, "Saved canvas background style: \(style.rawValue)")
-    }
-    
-    func loadCanvasBackgroundStyle() -> CanvasBackgroundStyle {
-        guard let rawValue = defaults.string(forKey: Keys.canvasBackgroundStyle),
-              let style = CanvasBackgroundStyle(rawValue: rawValue) else {
-            return .dots
-        }
-        return style
     }
     
     func saveDefaultNodeColor(_ color: NodeColor) {
