@@ -27,12 +27,7 @@ struct CanvasView: View {
                     let baseWidth = node.isMinimized ? 280.0 : node.size.width
                     let baseHeight = node.isMinimized ? 72.0 : node.size.height
                     SessionNodeView(node: node)
-                        .frame(width: baseWidth, height: baseHeight)
-                        .scaleEffect(appState.canvasScale, anchor: .center)
-                        .frame(
-                            width: baseWidth * appState.canvasScale,
-                            height: baseHeight * appState.canvasScale
-                        )
+                        .frame(width: baseWidth * appState.canvasScale, height: baseHeight * appState.canvasScale)
                         .position(
                             x: node.position.x * appState.canvasScale + appState.canvasOffset.width + geometry.size.width / 2,
                             y: node.position.y * appState.canvasScale + appState.canvasOffset.height + geometry.size.height / 2
