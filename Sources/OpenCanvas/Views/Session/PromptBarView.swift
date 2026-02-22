@@ -9,6 +9,7 @@ struct PromptBarView: View {
     let isRunning: Bool
     let onSend: () -> Void
     let onAbort: () -> Void
+    var onFocus: (() -> Void)? = nil
     
     @FocusState private var isFocused: Bool
     
@@ -29,6 +30,9 @@ struct PromptBarView: View {
                         .stroke(Color.ocBorder, lineWidth: 1)
                 )
                 .disabled(!isEnabled || isRunning)
+                .onChange(of: isFocused) { _, focused in
+                    if focused { onFocus?() }
+                }
             
             if isRunning {
                 Button {

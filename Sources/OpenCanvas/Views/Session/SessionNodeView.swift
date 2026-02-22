@@ -102,37 +102,45 @@ struct SessionNodeView: View {
             Divider()
                 .overlay(Color.ocBorder)
             
-            if viewModel.status == .disconnected {
-                disconnectedView
-            } else {
-                VStack(spacing: 0) {
-                    MessageFeedView(messages: viewModel.messages)
-                    
-                    if let error = viewModel.errorMessage {
-                        errorBanner(error)
-                    }
-                    
-                    if let permission = viewModel.pendingPermission {
-                        permissionBanner(permission)
-                    }
-                    
-                    PromptBarView(
-                        inputText: $viewModel.inputText,
-                        isEnabled: viewModel.status == .idle,
-                        isRunning: viewModel.status == .running,
-                        onSend: {
-                            Task {
-                                await viewModel.sendMessage()
-                            }
-                        },
-                        onAbort: {
-                            Task {
-                                await viewModel.abortGeneration()
-                            }
+            Group {
+                if viewModel.status == .disconnected {
+                    disconnectedView
+                } else {
+                    VStack(spacing: 0) {
+                        MessageFeedView(messages: viewModel.messages)
+                        
+                        if let error = viewModel.errorMessage {
+                            errorBanner(error)
                         }
-                    )
+                        
+                        if let permission = viewModel.pendingPermission {
+                            permissionBanner(permission)
+                        }
+                        
+                        PromptBarView(
+                            inputText: $viewModel.inputText,
+                            isEnabled: viewModel.status == .idle,
+                            isRunning: viewModel.status == .running,
+                            onSend: {
+                                Task {
+                                    await viewModel.sendMessage()
+                                }
+                            },
+                            onAbort: {
+                                Task {
+                                    await viewModel.abortGeneration()
+                                }
+                            },
+                            onFocus: {
+                                appState.clearSelection()
+                            }
+                        )
+                    }
                 }
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                appState.clearSelection()
+            })
         }
         .frame(width: node.size.width, height: node.size.height)
     }
