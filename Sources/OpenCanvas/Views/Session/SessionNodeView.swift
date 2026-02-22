@@ -31,11 +31,13 @@ struct SessionNodeView: View {
             RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
                 .fill(appState.isNodeSelected(node.id) ? Color.accentColor.opacity(0.08) : Color.clear)
                 .animation(.easeInOut(duration: 0.15), value: appState.isNodeSelected(node.id))
+                .allowsHitTesting(false)
         }
         .overlay {
             RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
                 .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 3 : 1)
                 .animation(.easeInOut(duration: 0.15), value: appState.isNodeSelected(node.id))
+                .allowsHitTesting(false)
         }
         .clipShape(.rect(cornerRadius: node.isMinimized ? 8 : 10))
         .scaleEffect(isDragging ? 1.02 : 1)
