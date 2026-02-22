@@ -17,6 +17,8 @@ final class PersistenceService {
         static let nodeSpacing = "nodeSpacing"
         static let normalFontSize = "normalFontSize"
         static let expandedFontSize = "expandedFontSize"
+        static let opencodeBinaryPath = "opencodeBinaryPath"
+        static let managedServerPort = "managedServerPort"
     }
     
     private init() {}
@@ -149,5 +151,24 @@ final class PersistenceService {
     func loadExpandedFontSize() -> CGFloat {
         let size = defaults.double(forKey: Keys.expandedFontSize)
         return size > 0 ? CGFloat(size) : 16
+    }
+
+    func saveOpencodeBinaryPath(_ path: String) {
+        defaults.set(path, forKey: Keys.opencodeBinaryPath)
+        log(.debug, category: .storage, "Saved opencode binary path: \(path)")
+    }
+
+    func loadOpencodeBinaryPath() -> String {
+        defaults.string(forKey: Keys.opencodeBinaryPath) ?? ""
+    }
+
+    func saveManagedServerPort(_ port: Int) {
+        defaults.set(port, forKey: Keys.managedServerPort)
+        log(.debug, category: .storage, "Saved managed server port: \(port)")
+    }
+
+    /// Returns 0 if no port has been persisted yet.
+    func loadManagedServerPort() -> Int {
+        defaults.integer(forKey: Keys.managedServerPort)
     }
 }

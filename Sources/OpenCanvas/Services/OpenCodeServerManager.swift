@@ -44,6 +44,10 @@ final class OpenCodeServerManager {
         eventSubject.eraseToAnyPublisher()
     }
     
+    private(set) var isServerManaged: Bool = false
+    private var serverProcess: Process?
+    var isServerRunning: Bool { serverProcess?.isRunning ?? false }
+
     private var sseTask: Task<Void, Never>?
     private var healthCheckTask: Task<Void, Never>?
     private var retryCount: Int = 0
@@ -90,7 +94,106 @@ final class OpenCodeServerManager {
         isConnected = false
         retryCount = 0
     }
-    
+
+    // MARK: - Managed Server Lifecycle
+
+    func startManagedServer(binaryPath: String) async {
+        stopManagedServer()
+
+        let resolvedPath: String
+        if binaryPath.isEmpty {
+            guard let found = await findOpencodeBinary() else {
+                connectionError = "Cannot find 'opencode' binary. Set the path in Settings > Server."
+                log(.error, category: .network, "Failed to find opencode binary")
+                return
+            }
+            resolvedPath = found
+        } else {
+            resolvedPath = binaryPath
+        }
+
+        let persistence = PersistenceService.shared
+        var port = persistence.loadManagedServerPort()
+        if port == 0 {
+            port = Int.random(in: 49152...65535)
+            persistence.saveManagedServerPort(port)
+            log(.info, category: .network, "Assigned new managed server port: \(port)")
+        } else {
+            log(.info, category: .network, "Reusing persisted managed server port: \(port)")
+        }
+        let url = "http://localhost:\(port)"
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: resolvedPath)
+        process.arguments = ["serve", "--port", "\(port)"]
+        process.standardOutput = FileHandle.nullDevice
+        process.standardError = FileHandle.nullDevice
+
+        process.terminationHandler = { [weak self] p in
+            Task { @MainActor [weak self] in
+                self?.serverProcess = nil
+                self?.isServerManaged = false
+                log(.info, category: .network, "opencode server process terminated (status \(p.terminationStatus))")
+            }
+        }
+
+        do {
+            try process.run()
+            serverProcess = process
+            isServerManaged = true
+            serverURL = url
+            log(.info, category: .network, "Started managed opencode server: \(resolvedPath) serve --port \(port)")
+            // Give the server a moment to start before connecting
+            try? await Task.sleep(for: .seconds(1.5))
+            await reconnect()
+        } catch {
+            connectionError = "Failed to start server: \(error.localizedDescription)"
+            log(.error, category: .network, "Failed to launch opencode process: \(error)")
+        }
+    }
+
+    func stopManagedServer() {
+        if let proc = serverProcess, proc.isRunning {
+            proc.terminate()
+            log(.info, category: .network, "Terminated managed opencode server process")
+        }
+        serverProcess = nil
+        isServerManaged = false
+        disconnect()
+    }
+
+    private func findOpencodeBinary() async -> String? {
+        let commonPaths = [
+            "/opt/homebrew/bin/opencode",
+            "/usr/local/bin/opencode",
+            "/usr/bin/opencode",
+        ]
+        for path in commonPaths where FileManager.default.fileExists(atPath: path) {
+            log(.info, category: .network, "Found opencode binary at: \(path)")
+            return path
+        }
+
+        // Fall back to resolving via login shell
+        return await Task.detached {
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/bin/zsh")
+            process.arguments = ["-lc", "which opencode"]
+            let pipe = Pipe()
+            process.standardOutput = pipe
+            process.standardError = Pipe()
+            do {
+                try process.run()
+                process.waitUntilExit()
+                let data = pipe.fileHandleForReading.readDataToEndOfFile()
+                let result = String(data: data, encoding: .utf8)?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+                return result.isEmpty ? nil : result
+            } catch {
+                return nil
+            }
+        }.value
+    }
+
     private func checkHealth() async {
         guard let url = baseURL?.appendingPathComponent("global/health") else {
             connectionError = "Invalid server URL"

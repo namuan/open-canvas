@@ -5,6 +5,7 @@ import SwiftUI
 @Observable
 final class SettingsViewModel {
     var serverURL: String = "http://localhost:4096"
+    var opencodeBinaryPath: String = ""
     var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
     var normalFontSize: CGFloat = 13
@@ -15,6 +16,7 @@ final class SettingsViewModel {
     
     func loadSettings() {
         serverURL = persistenceService.loadServerURL()
+        opencodeBinaryPath = persistenceService.loadOpencodeBinaryPath()
         nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
         normalFontSize = persistenceService.loadNormalFontSize()
@@ -25,6 +27,24 @@ final class SettingsViewModel {
         persistenceService.saveServerURL(serverURL)
         serverManager.configure(url: serverURL)
     }
+
+    func saveOpencodeBinaryPath() {
+        persistenceService.saveOpencodeBinaryPath(opencodeBinaryPath)
+    }
+
+    func startManagedServer() async {
+        await serverManager.startManagedServer(binaryPath: opencodeBinaryPath)
+        // Sync the randomly assigned port URL back so the TextField reflects it
+        serverURL = serverManager.serverURL
+        persistenceService.saveServerURL(serverURL)
+    }
+
+    func stopManagedServer() {
+        serverManager.stopManagedServer()
+    }
+
+    var isServerManaged: Bool { serverManager.isServerManaged }
+    var isServerRunning: Bool { serverManager.isServerRunning }
     
     func saveNodeSpacing() {
         persistenceService.saveNodeSpacing(nodeSpacing)

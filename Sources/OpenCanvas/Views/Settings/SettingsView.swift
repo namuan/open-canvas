@@ -43,12 +43,8 @@ struct ServerSettingsTab: View {
     var body: some View {
         Form {
             Section("Connection") {
-                HStack {
-                    Text("Server URL")
-                    TextField("http://localhost:4096", text: $viewModel.serverURL)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 280)
-                }
+                TextField("http://localhost:4097", text: $viewModel.serverURL)
+                    .textFieldStyle(.roundedBorder)
                 
                 HStack {
                     Text("Status")
@@ -75,6 +71,42 @@ struct ServerSettingsTab: View {
                         Text(viewModel.serverVersion)
                             .foregroundStyle(.secondary)
                     }
+                }
+            }
+
+            Section("Server Management") {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(viewModel.isServerManaged ? "Managed by OpenCanvas" : "External (unmanaged)")
+                            .font(.subheadline)
+                        Text(viewModel.isServerManaged ? "opencode serve" : "Start OpenCanvas-managed server below")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .monospaced()
+                    }
+                    Spacer()
+                    if viewModel.isServerManaged && viewModel.isServerRunning {
+                        Button("Stop Server") {
+                            viewModel.stopManagedServer()
+                        }
+                        .foregroundStyle(.red)
+                    } else {
+                        Button("Start Server") {
+                            Task { await viewModel.startManagedServer() }
+                        }
+                        .disabled(viewModel.isServerManaged)
+                    }
+                }
+
+                HStack {
+                    Text("Binary Path")
+                        .foregroundStyle(.secondary)
+                    TextField("Auto-detect (e.g. /opt/homebrew/bin/opencode)", text: $viewModel.opencodeBinaryPath)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 11, design: .monospaced))
+                        .onChange(of: viewModel.opencodeBinaryPath) { _, _ in
+                            viewModel.saveOpencodeBinaryPath()
+                        }
                 }
             }
             
