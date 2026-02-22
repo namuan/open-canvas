@@ -12,11 +12,12 @@ struct PromptBarView: View {
     var onFocus: (() -> Void)? = nil
     
     @FocusState private var isFocused: Bool
+    @Environment(\.sessionFontSize) private var sessionFontSize
     
     var body: some View {
         HStack(alignment: .bottom, spacing: 12) {
             TextEditor(text: $inputText)
-                .font(.system(size: 13))
+                .font(.system(size: sessionFontSize))
                 .foregroundStyle(.primary)
                 .scrollContentBackground(.hidden)
                 .focused($isFocused)
@@ -39,7 +40,7 @@ struct PromptBarView: View {
                     onAbort()
                 } label: {
                     Image(systemName: "stop.circle.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: sessionFontSize + 7))
                         .foregroundStyle(.red)
                 }
                 .buttonStyle(.plain)
@@ -49,7 +50,7 @@ struct PromptBarView: View {
                     onSend()
                 } label: {
                     Image(systemName: "paperplane.fill")
-                        .font(.system(size: 20))
+                        .font(.system(size: sessionFontSize + 7))
                         .foregroundStyle(isEnabled && !inputText.isBlank ? .blue : .gray)
                 }
                 .buttonStyle(.plain)

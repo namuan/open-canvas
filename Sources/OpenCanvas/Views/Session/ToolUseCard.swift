@@ -6,13 +6,15 @@ import AppKit
 struct ToolUseCard: View {
     let toolUse: ToolUseInfo
     
+    @Environment(\.sessionFontSize) private var sessionFontSize
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 toolIcon
                 
                 Text(toolUse.name)
-                    .font(.system(size: 12, weight: .medium))
+                    .font(.system(size: max(10, sessionFontSize - 1), weight: .medium))
                     .foregroundStyle(.primary)
                 
                 Spacer()
@@ -23,11 +25,11 @@ struct ToolUseCard: View {
             if let input = toolUse.input, !input.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Input:")
-                        .font(.system(size: 10))
+                        .font(.system(size: max(9, sessionFontSize - 3)))
                         .foregroundStyle(.secondary)
                     
                     Text(input)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: max(9, sessionFontSize - 2), design: .monospaced))
                         .foregroundStyle(.primary)
                         .lineLimit(5)
                 }
@@ -36,11 +38,11 @@ struct ToolUseCard: View {
             if let output = toolUse.output, !output.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Output:")
-                        .font(.system(size: 10))
+                        .font(.system(size: max(9, sessionFontSize - 3)))
                         .foregroundStyle(.secondary)
                     
                     Text(output)
-                        .font(.system(size: 11, design: .monospaced))
+                        .font(.system(size: max(9, sessionFontSize - 2), design: .monospaced))
                         .foregroundStyle(.primary)
                         .lineLimit(5)
                 }
@@ -71,7 +73,7 @@ struct ToolUseCard: View {
                 Image(systemName: "wrench.and.screwdriver")
             }
         }
-        .font(.system(size: 12))
+        .font(.system(size: max(10, sessionFontSize - 1)))
         .foregroundStyle(.secondary)
         .frame(width: 20, height: 20)
         .background(Color.ocComposerBackground)
@@ -84,27 +86,27 @@ struct ToolUseCard: View {
             switch toolUse.status {
             case .pending:
                 Text("Pending")
-                    .font(.system(size: 10))
+                    .font(.system(size: max(9, sessionFontSize - 3)))
                     .foregroundStyle(.orange)
             case .running:
                 HStack(spacing: 4) {
                     ProgressView()
                         .scaleEffect(0.5)
                     Text("Running")
-                        .font(.system(size: 10))
+                        .font(.system(size: max(9, sessionFontSize - 3)))
                 }
                 .foregroundStyle(.blue)
             case .completed:
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(.system(size: max(10, sessionFontSize - 1)))
                     .foregroundStyle(.green)
             case .error:
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 12))
+                    .font(.system(size: max(10, sessionFontSize - 1)))
                     .foregroundStyle(.red)
             case .permissionRequired:
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 12))
+                    .font(.system(size: max(10, sessionFontSize - 1)))
                     .foregroundStyle(.yellow)
             }
         }

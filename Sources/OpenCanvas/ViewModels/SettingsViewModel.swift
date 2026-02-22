@@ -9,6 +9,8 @@ final class SettingsViewModel {
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
+    var normalFontSize: CGFloat = 13
+    var expandedFontSize: CGFloat = 16
     
     private let persistenceService = PersistenceService.shared
     private let serverManager = OpenCodeServerManager.shared
@@ -19,6 +21,8 @@ final class SettingsViewModel {
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
+        normalFontSize = persistenceService.loadNormalFontSize()
+        expandedFontSize = persistenceService.loadExpandedFontSize()
     }
     
     func saveServerURL() {
@@ -36,6 +40,14 @@ final class SettingsViewModel {
 
     func saveNodeSpacing() {
         persistenceService.saveNodeSpacing(nodeSpacing)
+    }
+    
+    func saveNormalFontSize() {
+        persistenceService.saveNormalFontSize(normalFontSize)
+    }
+
+    func saveExpandedFontSize() {
+        persistenceService.saveExpandedFontSize(expandedFontSize)
     }
     
     func saveLogLevel() {

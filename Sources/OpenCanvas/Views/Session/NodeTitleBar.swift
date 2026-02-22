@@ -11,6 +11,7 @@ struct NodeTitleBar: View {
     @State private var isEditing = false
     @State private var editedTitle = ""
     @FocusState private var isTitleFocused: Bool
+    @Environment(\.sessionFontSize) private var sessionFontSize
     
     var body: some View {
         HStack(spacing: 8) {
@@ -21,7 +22,7 @@ struct NodeTitleBar: View {
             if isEditing {
                 TextField("Title", text: $editedTitle)
                     .textFieldStyle(.plain)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: sessionFontSize, weight: .medium))
                     .foregroundStyle(.primary)
                     .focused($isTitleFocused)
                     .onSubmit {
@@ -32,7 +33,7 @@ struct NodeTitleBar: View {
                     }
             } else {
                 Text(title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: sessionFontSize, weight: .medium))
                     .foregroundStyle(.primary)
                     .lineLimit(1)
             }
@@ -44,7 +45,7 @@ struct NodeTitleBar: View {
                     startTitleEdit()
                 } label: {
                     Image(systemName: "pencil")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: max(9, sessionFontSize - 2), weight: .semibold))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
@@ -53,7 +54,7 @@ struct NodeTitleBar: View {
 
             if let sessionID {
                 Text(sessionID.truncated(to: 12))
-                    .font(.system(size: 10, design: .monospaced))
+                    .font(.system(size: max(9, sessionFontSize - 3), design: .monospaced))
                 .foregroundStyle(.secondary)
             }
         }

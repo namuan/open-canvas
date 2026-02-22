@@ -13,6 +13,9 @@ struct SessionNodeView: View {
     
     let node: CanvasNode
     
+    private var effectiveFontSize: CGFloat {
+        appState.isNodeMaximized(node.id) ? appState.expandedFontSize : appState.normalFontSize
+    }
     init(node: CanvasNode) {
         self.node = node
         _viewModel = State(initialValue: SessionNodeViewModel(nodeID: node.id))
@@ -24,6 +27,10 @@ struct SessionNodeView: View {
                 minimizedView
             } else {
                 expandedView
+                    .environment(
+                        \.sessionFontSize,
+                        appState.isNodeMaximized(node.id) ? appState.expandedFontSize : appState.normalFontSize
+                    )
             }
         }
         .background(nodeCardBackground)
@@ -213,7 +220,7 @@ struct SessionNodeView: View {
                 .foregroundStyle(.yellow)
             
             Text(error)
-                .font(.system(size: 12))
+                .font(.system(size: max(10, effectiveFontSize - 1)))
                 .lineLimit(2)
                 .foregroundStyle(.primary)
             
@@ -235,10 +242,10 @@ struct SessionNodeView: View {
     private func permissionBanner(_ permission: PermissionRequestedData) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Permission Required", systemImage: "hand.raised.fill")
-                .font(.system(size: 12, weight: .semibold))
+                .font(.system(size: max(10, effectiveFontSize - 1), weight: .semibold))
             
             Text(permission.description)
-                .font(.system(size: 11))
+                .font(.system(size: max(9, effectiveFontSize - 2)))
                 .lineLimit(3)
             
             HStack(spacing: 10) {

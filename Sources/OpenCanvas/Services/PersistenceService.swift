@@ -17,6 +17,8 @@ final class PersistenceService {
         static let canvasOffset = "canvasOffset"
         static let canvasScale = "canvasScale"
         static let nodeSpacing = "nodeSpacing"
+        static let normalFontSize = "normalFontSize"
+        static let expandedFontSize = "expandedFontSize"
     }
     
     private init() {}
@@ -155,5 +157,25 @@ final class PersistenceService {
     func loadNodeSpacing() -> CGFloat {
         let spacing = defaults.double(forKey: Keys.nodeSpacing)
         return spacing > 0 ? CGFloat(spacing) : 40
+    }
+
+    func saveNormalFontSize(_ size: CGFloat) {
+        defaults.set(Double(size), forKey: Keys.normalFontSize)
+        log(.debug, category: .storage, "Saved normal font size: \(size)")
+    }
+
+    func loadNormalFontSize() -> CGFloat {
+        let size = defaults.double(forKey: Keys.normalFontSize)
+        return size > 0 ? CGFloat(size) : 13
+    }
+
+    func saveExpandedFontSize(_ size: CGFloat) {
+        defaults.set(Double(size), forKey: Keys.expandedFontSize)
+        log(.debug, category: .storage, "Saved expanded font size: \(size)")
+    }
+
+    func loadExpandedFontSize() -> CGFloat {
+        let size = defaults.double(forKey: Keys.expandedFontSize)
+        return size > 0 ? CGFloat(size) : 16
     }
 }

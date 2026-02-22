@@ -4,20 +4,24 @@ import AppKit
 
 struct TrackpadScrollCaptureView: NSViewRepresentable {
     let onScroll: (CGSize) -> Void
+    var isBlocked: Bool = false
 
     func makeNSView(context: Context) -> ScrollMonitorView {
         let view = ScrollMonitorView()
         view.onScroll = onScroll
+        view.isBlocked = isBlocked
         return view
     }
 
     func updateNSView(_ nsView: ScrollMonitorView, context: Context) {
         nsView.onScroll = onScroll
+        nsView.isBlocked = isBlocked
     }
 }
 
 final class ScrollMonitorView: NSView {
     var onScroll: ((CGSize) -> Void)?
+    var isBlocked: Bool = false
     private var monitor: Any?
 
     override func viewDidMoveToWindow() {
@@ -34,6 +38,9 @@ final class ScrollMonitorView: NSView {
 
         monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, self.window != nil else { return event }
+
+            // Pass events through when a modal overlay (e.g. Settings sheet) is open.
+            guard !self.isBlocked else { return event }
 
             let locationInWindow = event.locationInWindow
             let locationInView = self.convert(locationInWindow, from: nil)

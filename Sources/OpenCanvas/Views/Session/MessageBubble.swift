@@ -6,11 +6,13 @@ import AppKit
 struct MessageBubble: View {
     let message: ChatMessage
     
+    @Environment(\.sessionFontSize) private var sessionFontSize
+    
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
             if message.role == .assistant {
                 Image(systemName: "cpu")
-                    .font(.system(size: 12))
+                    .font(.system(size: max(10, sessionFontSize - 1)))
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
                     .background(Color.ocComposerBackground)
@@ -19,7 +21,7 @@ struct MessageBubble: View {
             
             VStack(alignment: message.role == .user ? .trailing : .leading, spacing: 4) {
                 Text(message.content)
-                    .font(.system(size: 13))
+                    .font(.system(size: sessionFontSize))
                     .foregroundStyle(.primary)
                     .textSelection(.enabled)
                     .padding(12)
@@ -35,7 +37,7 @@ struct MessageBubble: View {
                     HStack(spacing: 4) {
                         LoadingDots()
                         Text("Generating...")
-                            .font(.system(size: 10))
+                            .font(.system(size: max(9, sessionFontSize - 3)))
                             .foregroundStyle(.secondary)
                     }
                 }
@@ -47,7 +49,7 @@ struct MessageBubble: View {
             
             if message.role == .user {
                 Image(systemName: "person")
-                    .font(.system(size: 12))
+                    .font(.system(size: max(10, sessionFontSize - 1)))
                     .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
                     .background(Color.ocComposerBackground)

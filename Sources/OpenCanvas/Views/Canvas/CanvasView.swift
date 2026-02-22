@@ -48,7 +48,7 @@ struct CanvasView: View {
             .contentShape(Rectangle())
             #if os(macOS)
             .overlay {
-                TrackpadScrollCaptureView { delta in
+                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation) { delta in
                     guard !isMarqueeSelecting else { return }
 
                     let newOffset = CGSize(
@@ -82,6 +82,7 @@ struct CanvasView: View {
         }
         .sheet(isPresented: $showingSettings) {
             SettingsView()
+                .environment(appState)
         }
         .confirmationDialog(
             "Clear Canvas",

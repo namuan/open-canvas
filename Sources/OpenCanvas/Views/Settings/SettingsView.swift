@@ -27,7 +27,7 @@ struct SettingsView: View {
                     Label("About", systemImage: "info.circle")
                 }
         }
-        .frame(width: 500, height: 400)
+        .frame(width: 540, height: 520)
         .onAppear {
             viewModel.loadSettings()
         }
@@ -133,6 +133,30 @@ struct AppearanceSettingsTab: View {
 
                 Slider(value: spacingBinding, in: 0...160, step: 4)
             }
+
+            Section("Session Node Fonts") {
+                HStack {
+                    Text("Normal Font Size")
+                    Spacer()
+                    Text("\(Int(viewModel.normalFontSize)) pt")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56, alignment: .trailing)
+                }
+
+                Slider(value: normalFontSizeBinding, in: 10...24, step: 1)
+
+                HStack {
+                    Text("Fullscreen Font Size")
+                    Spacer()
+                    Text("\(Int(viewModel.expandedFontSize)) pt")
+                        .font(.system(size: 12, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .frame(width: 56, alignment: .trailing)
+                }
+
+                Slider(value: expandedFontSizeBinding, in: 12...32, step: 1)
+            }
         }
         .formStyle(.grouped)
         .padding()
@@ -145,6 +169,28 @@ struct AppearanceSettingsTab: View {
                 viewModel.nodeSpacing = newValue
                 viewModel.saveNodeSpacing()
                 appState.updateNodeSpacing(newValue)
+            }
+        )
+    }
+
+    private var normalFontSizeBinding: Binding<CGFloat> {
+        Binding(
+            get: { viewModel.normalFontSize },
+            set: { newValue in
+                viewModel.normalFontSize = newValue
+                viewModel.saveNormalFontSize()
+                appState.updateNormalFontSize(newValue)
+            }
+        )
+    }
+
+    private var expandedFontSizeBinding: Binding<CGFloat> {
+        Binding(
+            get: { viewModel.expandedFontSize },
+            set: { newValue in
+                viewModel.expandedFontSize = newValue
+                viewModel.saveExpandedFontSize()
+                appState.updateExpandedFontSize(newValue)
             }
         )
     }

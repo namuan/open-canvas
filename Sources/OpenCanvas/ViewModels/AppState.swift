@@ -14,6 +14,8 @@ final class AppState {
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
+    var normalFontSize: CGFloat = 13
+    var expandedFontSize: CGFloat = 16
     private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
     
     private let serverManager = OpenCodeServerManager.shared
@@ -68,6 +70,8 @@ final class AppState {
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
+        normalFontSize = persistenceService.loadNormalFontSize()
+        expandedFontSize = persistenceService.loadExpandedFontSize()
         
         AppLogger.shared.setLogLevel(persistenceService.loadLogLevel())
     }
@@ -473,6 +477,18 @@ final class AppState {
         let clamped = min(160, max(0, spacing))
         nodeSpacing = clamped
         persistenceService.saveNodeSpacing(clamped)
+    }
+
+    func updateNormalFontSize(_ size: CGFloat) {
+        let clamped = min(24, max(10, size))
+        normalFontSize = clamped
+        persistenceService.saveNormalFontSize(clamped)
+    }
+
+    func updateExpandedFontSize(_ size: CGFloat) {
+        let clamped = min(32, max(12, size))
+        expandedFontSize = clamped
+        persistenceService.saveExpandedFontSize(clamped)
     }
     
     func clearCanvas() {
