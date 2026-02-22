@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct SidebarView: View {
     @Environment(AppState.self) private var appState
@@ -124,7 +127,11 @@ struct SidebarView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.thinMaterial, in: .rect(cornerRadius: 12))
+        .background(Color(nsColor: .windowBackgroundColor), in: .rect(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
     }
 }
 

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct PromptBarView: View {
     @Binding var inputText: String
@@ -13,14 +16,18 @@ struct PromptBarView: View {
         HStack(alignment: .bottom, spacing: 12) {
             TextEditor(text: $inputText)
                 .font(.system(size: 13))
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .scrollContentBackground(.hidden)
                 .focused($isFocused)
                 .frame(minHeight: 36, maxHeight: 100)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 4)
-                .background(.black.opacity(0.3))
+                .background(Color.ocInputBackground)
                 .clipShape(.rect(cornerRadius: 8))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(Color.ocBorder, lineWidth: 1)
+                )
                 .disabled(!isEnabled || isRunning)
             
             if isRunning {
@@ -48,6 +55,9 @@ struct PromptBarView: View {
             }
         }
         .padding(12)
-        .background(.black.opacity(0.4))
+        .background(Color.ocComposerBackground)
+        .overlay(alignment: .top) {
+            Divider().overlay(Color.ocBorder)
+        }
     }
 }

@@ -1,36 +1,23 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct CanvasBackground: View {
     let style: CanvasBackgroundStyle
     let scale: CGFloat
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(red: 0.05, green: 0.07, blue: 0.11),
-                        Color(red: 0.03, green: 0.04, blue: 0.07),
-                        Color(red: 0.08, green: 0.13, blue: 0.2)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                
-                Circle()
-                    .fill(Color.cyan.opacity(0.08))
-                    .frame(width: geometry.size.width * 0.7)
-                    .blur(radius: 30)
-                    .offset(x: geometry.size.width * 0.2, y: -geometry.size.height * 0.3)
-                
-                switch style {
-                case .dots:
-                    dotGrid
-                case .lines:
-                    lineGrid
-                case .none:
-                    EmptyView()
-                }
+        ZStack {
+            Color(nsColor: .windowBackgroundColor)
+
+            switch style {
+            case .dots:
+                dotGrid
+            case .lines:
+                lineGrid
+            case .none:
+                EmptyView()
             }
         }
     }
@@ -53,7 +40,7 @@ struct CanvasBackground: View {
                     )
                     context.fill(
                         Path(ellipseIn: rect),
-                        with: .color(.white.opacity(0.14))
+                        with: .color(.secondary.opacity(0.25))
                     )
                 }
             }
@@ -80,7 +67,7 @@ struct CanvasBackground: View {
                         y += spacing
                     }
                 },
-                with: .color(.white.opacity(0.09)),
+                with: .color(.secondary.opacity(0.2)),
                 lineWidth: max(0.5, 1 * scale)
             )
         }

@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct ToolUseCard: View {
     let toolUse: ToolUseInfo
@@ -10,7 +13,7 @@ struct ToolUseCard: View {
                 
                 Text(toolUse.name)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 
                 Spacer()
                 
@@ -21,11 +24,11 @@ struct ToolUseCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Input:")
                         .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.secondary)
                     
                     Text(input)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.primary)
                         .lineLimit(5)
                 }
             }
@@ -34,18 +37,22 @@ struct ToolUseCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Output:")
                         .font(.system(size: 10))
-                        .foregroundStyle(.white.opacity(0.5))
+                        .foregroundStyle(.secondary)
                     
                     Text(output)
                         .font(.system(size: 11, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(.primary)
                         .lineLimit(5)
                 }
             }
         }
         .padding(10)
-        .background(.black.opacity(0.3))
+        .background(Color.ocBubbleSystemBackground)
         .clipShape(.rect(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color.ocBorder, lineWidth: 1)
+        )
     }
     
     @ViewBuilder
@@ -65,9 +72,9 @@ struct ToolUseCard: View {
             }
         }
         .font(.system(size: 12))
-        .foregroundStyle(.white.opacity(0.7))
+        .foregroundStyle(.secondary)
         .frame(width: 20, height: 20)
-        .background(Color.purple.opacity(0.5))
+        .background(Color.ocComposerBackground)
         .clipShape(.rect(cornerRadius: 4))
     }
     

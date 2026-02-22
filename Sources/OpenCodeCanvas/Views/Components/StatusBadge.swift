@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 
 struct StatusBadge: View {
     let status: NodeStatus
@@ -9,25 +12,15 @@ struct StatusBadge: View {
             
             Text(status.displayText)
                 .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.primary)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
-        .background(backgroundColor)
+        .background(Color(nsColor: .controlBackgroundColor))
         .clipShape(.rect(cornerRadius: 8))
-    }
-    
-    private var backgroundColor: Color {
-        switch status {
-        case .disconnected:
-            Color.gray.opacity(0.3)
-        case .connecting:
-            Color.orange.opacity(0.3)
-        case .idle:
-            Color.green.opacity(0.3)
-        case .running:
-            Color.blue.opacity(0.3)
-        case .error:
-            Color.red.opacity(0.3)
-        }
+        .overlay(
+            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
     }
 }

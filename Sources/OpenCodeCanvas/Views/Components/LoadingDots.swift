@@ -7,7 +7,7 @@ struct LoadingDots: View {
         HStack(spacing: 4) {
             ForEach(0..<3) { index in
                 Circle()
-                    .fill(.white.opacity(0.7))
+                    .fill(.secondary)
                     .frame(width: 6, height: 6)
                     .scaleEffect(animatingDot == index ? 1.2 : 0.8)
                     .animation(

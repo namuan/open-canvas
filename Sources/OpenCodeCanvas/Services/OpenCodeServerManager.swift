@@ -205,9 +205,6 @@ final class OpenCodeServerManager {
     }
     
     private func processSSEEvent(data: String) async {
-        log(.info, category: .sse, "Processing SSE event")
-        log(.debug, category: .sse, "SSE event raw data: \(data)")
-        
         guard let jsonData = data.data(using: .utf8) else {
             log(.error, category: .sse, "Failed to convert SSE data to UTF-8")
             return
@@ -222,9 +219,11 @@ final class OpenCodeServerManager {
             return
         }
         
-        let event = SSEEvent(type: eventType, rawData: jsonData)
+        let event = SSEEvent(type: eventType, rawData: jsonData, jsonObject: json)
         
-        log(.info, category: .sse, "Decoded SSE event: type=\(event.type)")
+        if eventType != .messagePartDelta, eventType != .messagePartUpdated, eventType != .serverHeartbeat {
+            log(.debug, category: .sse, "Decoded SSE event: type=\(event.type)")
+        }
         
         if event.type == .serverConnected {
             isConnected = true
@@ -233,7 +232,6 @@ final class OpenCodeServerManager {
         }
         
         eventSubject.send(event)
-        log(.debug, category: .sse, "SSE event sent to subscribers")
     }
     
     func listSessions() async throws -> [OCSession] {

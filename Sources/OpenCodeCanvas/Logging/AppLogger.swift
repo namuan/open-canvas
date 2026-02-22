@@ -17,6 +17,7 @@ final class AppLogger: @unchecked Sendable {
     private let osLog = Logger(subsystem: "com.opencodecanvas.app", category: "App")
     private let fileManager = FileManager.default
     private let logQueue = DispatchQueue(label: "com.opencodecanvas.logger", qos: .utility)
+    private let timestampFormatter = ISO8601DateFormatter()
     private let logDirectory: URL
     private var currentLogFile: URL
     private var logLevel: LogLevel = .info
@@ -59,7 +60,7 @@ final class AppLogger: @unchecked Sendable {
             if level < self.logLevel { return }
             
             let fileName = (file as NSString).lastPathComponent
-            let timestamp = ISO8601DateFormatter().string(from: Date())
+            let timestamp = self.timestampFormatter.string(from: Date())
             let logEntry = "\(timestamp) \(level.emoji) [\(level.rawValue)] [\(category.rawValue)] [\(fileName):\(line)] \(function) → \(message)\n"
             
             self.writeToFile(logEntry)

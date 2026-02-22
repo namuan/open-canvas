@@ -39,10 +39,6 @@ struct CanvasView: View {
                             width: node.isMinimized ? 280 : node.size.width,
                             height: node.isMinimized ? 72 : node.size.height
                         )
-                        .shadow(
-                            color: appState.isNodeSelected(node.id) ? node.color.primaryColor.opacity(0.25) : .clear,
-                            radius: 22
-                        )
                         .zIndex(zIndexForNode(node, index: index))
                         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeID)
                         .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeIDs)
@@ -129,7 +125,11 @@ struct CanvasView: View {
             .frame(width: 170)
         }
         .padding(12)
-        .background(.thinMaterial, in: .rect(cornerRadius: 12))
+        .background(Color(nsColor: .windowBackgroundColor), in: .rect(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+        )
     }
     
     private var canvasDragGesture: some Gesture {

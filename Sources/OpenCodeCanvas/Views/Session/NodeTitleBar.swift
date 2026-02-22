@@ -1,10 +1,7 @@
 import SwiftUI
-import AppKit
 
 struct NodeTitleBar: View {
     let title: String
-    let color: NodeColor
-    let status: NodeStatus
     let sessionID: String?
     let onTitleChange: (String) -> Void
     let onMinimize: () -> Void
@@ -16,36 +13,30 @@ struct NodeTitleBar: View {
     @FocusState private var isTitleFocused: Bool
     
     var body: some View {
-        HStack(spacing: 10) {
-            statusIcon
-            
-            VStack(alignment: .leading, spacing: 2) {
-                if isEditing {
-                    TextField("Title", text: $editedTitle)
-                        .textFieldStyle(.plain)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .focused($isTitleFocused)
-                        .onSubmit {
-                            commitTitleEdit()
-                        }
-                        .onExitCommand {
-                            cancelTitleEdit()
-                        }
-                } else {
-                    Text(title)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.white)
-                        .lineLimit(1)
-                }
-                
-                if let sessionID {
-                    Text(sessionID.truncated(to: 18))
-                        .font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(.white.opacity(0.74))
-                }
+        HStack(spacing: 8) {
+            trafficLightButton(color: .red, action: onClose, help: "Close")
+            trafficLightButton(color: .yellow, action: onMinimize, help: "Minimize")
+            trafficLightButton(color: .green, action: onToggleExpand, help: "Expand")
+
+            if isEditing {
+                TextField("Title", text: $editedTitle)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .focused($isTitleFocused)
+                    .onSubmit {
+                        commitTitleEdit()
+                    }
+                    .onExitCommand {
+                        cancelTitleEdit()
+                    }
+            } else {
+                Text(title)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
             }
-            
+
             Spacer(minLength: 0)
 
             if !isEditing {
@@ -56,87 +47,42 @@ struct NodeTitleBar: View {
                         .font(.system(size: 11, weight: .semibold))
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.secondary)
                 .help("Rename")
             }
-            
+
             if let sessionID {
-                Button {
-                    copySessionID(sessionID)
-                } label: {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 11, weight: .semibold))
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.white.opacity(0.8))
-                .help("Copy session ID")
+                Text(sessionID.truncated(to: 12))
+                    .font(.system(size: 10, design: .monospaced))
+                .foregroundStyle(.secondary)
             }
-            
-            Button {
-                onMinimize()
-            } label: {
-                Image(systemName: "rectangle.compress.vertical")
-                    .font(.system(size: 12, weight: .semibold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.white.opacity(0.8))
-            .help("Minimize")
-            
-            Button {
-                onClose()
-            } label: {
-                Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.white.opacity(0.85))
-            .help("Close")
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
         .background(titleBarBackground)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             onToggleExpand()
         }
     }
-    
-    private var statusIcon: some View {
-        Image(systemName: statusSymbol)
-            .font(.system(size: 12, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: 24, height: 24)
-            .background(color.primaryColor.opacity(0.55), in: .circle)
-            .overlay {
-                Circle()
-                    .stroke(.white.opacity(0.28), lineWidth: 1)
-            }
-    }
-    
+
     private var titleBarBackground: some View {
-        LinearGradient(
-            colors: [
-                .black.opacity(0.42),
-                color.primaryColor.opacity(0.24)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+        Color.ocTitleBackground
     }
-    
-    private var statusSymbol: String {
-        switch status {
-        case .disconnected:
-            return "bolt.slash"
-        case .connecting:
-            return "clock.arrow.circlepath"
-        case .idle:
-            return "bolt.horizontal.fill"
-        case .running:
-            return "waveform.path.ecg"
-        case .error:
-            return "exclamationmark.triangle.fill"
+
+    @ViewBuilder
+    private func trafficLightButton(color: Color, action: @escaping () -> Void, help: String) -> some View {
+        Button(action: action) {
+            Circle()
+                .fill(color)
+                .frame(width: 12, height: 12)
+                .overlay(
+                    Circle()
+                        .stroke(Color.black.opacity(0.2), lineWidth: 0.5)
+                )
         }
+        .buttonStyle(.plain)
+        .help(help)
     }
     
     private func startTitleEdit() {
@@ -157,9 +103,4 @@ struct NodeTitleBar: View {
         editedTitle = title
     }
     
-    private func copySessionID(_ id: String) {
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(id, forType: .string)
-    }
 }

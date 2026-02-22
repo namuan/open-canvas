@@ -28,15 +28,10 @@ struct SessionNodeView: View {
         }
         .background(nodeCardBackground)
         .overlay {
-            RoundedRectangle(cornerRadius: node.isMinimized ? 18 : 22, style: .continuous)
+            RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
                 .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 2 : 1)
         }
-        .clipShape(.rect(cornerRadius: node.isMinimized ? 18 : 22))
-        .shadow(
-            color: node.color.primaryColor.opacity(appState.isNodeSelected(node.id) ? 0.32 : 0.18),
-            radius: appState.isNodeSelected(node.id) ? 24 : 14,
-            y: 12
-        )
+        .clipShape(.rect(cornerRadius: node.isMinimized ? 8 : 10))
         .scaleEffect(isDragging ? 1.02 : 1)
         .offset(dragOffset)
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: isDragging)
@@ -65,39 +60,17 @@ struct SessionNodeView: View {
     }
     
     private var nodeCardBackground: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    node.color.primaryColor.opacity(0.95),
-                    node.color.primaryColor.opacity(0.65),
-                    Color.black.opacity(0.7)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            
-            Rectangle()
-                .fill(.ultraThinMaterial.opacity(0.82))
-        }
+        Color.ocPanelBackground
     }
     
-    private var selectionStroke: LinearGradient {
-        LinearGradient(
-            colors: [
-                .white.opacity(appState.isNodeSelected(node.id) ? 0.75 : 0.35),
-                node.color.primaryColor.opacity(appState.isNodeSelected(node.id) ? 0.9 : 0.45)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
+    private var selectionStroke: Color {
+        appState.isNodeSelected(node.id) ? .accentColor : .ocBorder
     }
     
     private var expandedView: some View {
         VStack(spacing: 0) {
             NodeTitleBar(
                 title: node.title,
-                color: node.color,
-                status: viewModel.status,
                 sessionID: viewModel.sessionID,
                 onTitleChange: { newTitle in
                     appState.updateNodeTitle(id: node.id, title: newTitle)
@@ -122,7 +95,7 @@ struct SessionNodeView: View {
             )
             
             Divider()
-                .overlay(.white.opacity(0.15))
+                .overlay(Color.ocBorder)
             
             if viewModel.status == .disconnected {
                 disconnectedView
@@ -173,6 +146,7 @@ struct SessionNodeView: View {
         }
         .padding(.horizontal, 16)
         .frame(width: 280, height: 72)
+        .background(Color.ocTitleBackground)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) {
@@ -188,15 +162,15 @@ struct SessionNodeView: View {
             
             Image(systemName: "network.slash")
                 .font(.system(size: 44, weight: .light))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(.secondary)
             
             Text("No Active Session")
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.9))
+                .foregroundStyle(.primary)
             
             Text("Create a session to begin messaging in this node.")
                 .font(.system(size: 12))
-                .foregroundStyle(.white.opacity(0.72))
+                .foregroundStyle(.secondary)
             
             Button {
                 Task {
@@ -228,7 +202,7 @@ struct SessionNodeView: View {
             Text(error)
                 .font(.system(size: 12))
                 .lineLimit(2)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
             
             Spacer(minLength: 0)
             
@@ -236,13 +210,13 @@ struct SessionNodeView: View {
                 viewModel.errorMessage = nil
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .foregroundStyle(.white.opacity(0.68))
+                    .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 9)
-        .background(.black.opacity(0.26))
+        .background(Color.ocPanelBackground)
     }
     
     private func permissionBanner(_ permission: PermissionRequestedData) -> some View {
@@ -272,7 +246,7 @@ struct SessionNodeView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.yellow.opacity(0.22))
+        .background(Color.ocComposerBackground)
     }
     
     private var dragGesture: some Gesture {

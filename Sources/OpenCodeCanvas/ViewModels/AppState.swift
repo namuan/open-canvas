@@ -23,6 +23,7 @@ final class AppState {
     private let serverManager = OpenCodeServerManager.shared
     private let persistenceService = PersistenceService.shared
     private var cancellables = Set<AnyCancellable>()
+    private var lastActivityUpdateBySessionID: [String: Date] = [:]
     
     var activeSessionCount: Int {
         nodes.filter { $0.sessionID != nil }.count
@@ -104,7 +105,12 @@ final class AppState {
         guard let sessionID = event.sessionID else { return }
         
         if let nodeIndex = nodes.firstIndex(where: { $0.sessionID == sessionID }) {
-            nodes[nodeIndex].lastActivity = Date()
+            if shouldUpdateLastActivity(for: event.type),
+               shouldRefreshActivityTimestamp(for: sessionID) {
+                let now = Date()
+                nodes[nodeIndex].lastActivity = now
+                lastActivityUpdateBySessionID[sessionID] = now
+            }
             
             switch event.type {
             case .sessionStatus:
@@ -119,6 +125,23 @@ final class AppState {
                 break
             }
         }
+    }
+
+    private func shouldUpdateLastActivity(for eventType: SSEEventType) -> Bool {
+        switch eventType {
+        case .sessionStatus, .sessionIdle, .sessionError, .messageUpdated, .messagePartUpdated, .permissionAsked:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func shouldRefreshActivityTimestamp(for sessionID: String) -> Bool {
+        let interval: TimeInterval = 2.0
+        guard let lastUpdate = lastActivityUpdateBySessionID[sessionID] else {
+            return true
+        }
+        return Date().timeIntervalSince(lastUpdate) >= interval
     }
     
     func addNode(at position: CGPoint? = nil) {

@@ -19,6 +19,10 @@ final class SessionNodeViewModel {
     
     private let serverManager = OpenCodeServerManager.shared
     private var cancellables = Set<AnyCancellable>()
+    private var streamingDeltaCount = 0
+    private var lastDeltaLogTime: Date = .distantPast
+    private var pendingStreamingChunks: [String: String] = [:]
+    private var streamingFlushTask: Task<Void, Never>?
     
     init(nodeID: UUID) {
         self.nodeID = nodeID
@@ -28,7 +32,6 @@ final class SessionNodeViewModel {
         serverManager.eventPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] event in
-                log(.debug, category: .session, "ViewModel received event via publisher: \(event.type)")
                 Task { @MainActor [weak self] in
                     self?.handleSSEEvent(event)
                 }
@@ -215,20 +218,17 @@ final class SessionNodeViewModel {
     }
     
     private func handleSSEEvent(_ event: SSEEvent) {
-        log(.debug, category: .session, "Received SSE event: \(event.type), my sessionID: \(sessionID ?? "nil")")
-        
         guard let eventSessionID = event.sessionID,
               eventSessionID == sessionID else {
             return
         }
-        
-        log(.info, category: .session, "Processing SSE event for session \(sessionID ?? ""): \(event.type)")
-        
+
         switch event.type {
         case .sessionStatus:
             if let status = event.status {
                 log(.info, category: .session, "Session status: \(status)")
                 if status == "idle" {
+                    flushPendingStreamingContent()
                     self.status = .idle
                     finalizeStreamingMessage()
                 } else if status == "busy" {
@@ -238,12 +238,14 @@ final class SessionNodeViewModel {
             
         case .sessionIdle:
             log(.info, category: .session, "Session idle")
+            flushPendingStreamingContent()
             status = .idle
             finalizeStreamingMessage()
             
         case .sessionError:
             if let errorMessage = event.error {
                 log(.error, category: .session, "Session error: \(errorMessage)")
+                flushPendingStreamingContent()
                 status = .error
                 self.errorMessage = errorMessage
                 finalizeStreamingMessage()
@@ -254,15 +256,21 @@ final class SessionNodeViewModel {
                let delta = event.delta,
                let field = event.field,
                field == "text" {
-                log(.info, category: .session, "Message part delta: messageID=\(messageID), delta=\(delta.truncated(to: 50))")
-                handleStreamingContent(messageID: messageID, content: delta)
+                streamingDeltaCount += 1
+                let now = Date()
+                if now.timeIntervalSince(lastDeltaLogTime) >= 1.0 {
+                    log(.debug, category: .session, "Streaming deltas: \(streamingDeltaCount) for message \(messageID)")
+                    lastDeltaLogTime = now
+                    streamingDeltaCount = 0
+                }
+                enqueueStreamingContent(messageID: messageID, content: delta)
             }
             
         case .messagePartUpdated:
-            log(.info, category: .session, "Message part updated: partID=\(event.partID ?? "nil")")
+            break
             
         case .messageUpdated:
-            log(.info, category: .session, "Message updated: messageID=\(event.messageID ?? "nil"), role=\(event.role ?? "nil")")
+            break
             
         case .permissionAsked:
             log(.info, category: .session, "Permission asked")
@@ -324,6 +332,44 @@ final class SessionNodeViewModel {
         }
     }
 
+    private func enqueueStreamingContent(messageID: String, content: String) {
+        guard !content.isEmpty else { return }
+
+        let pending = pendingStreamingChunks[messageID] ?? ""
+        pendingStreamingChunks[messageID] = SessionNodeViewModel.mergeStreamingContent(
+            current: pending,
+            incoming: content
+        )
+        startStreamingFlushIfNeeded()
+    }
+
+    private func startStreamingFlushIfNeeded() {
+        guard streamingFlushTask == nil else { return }
+
+        streamingFlushTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 80_000_000)
+                await MainActor.run {
+                    self.flushPendingStreamingContent()
+                }
+                if self.pendingStreamingChunks.isEmpty {
+                    self.streamingFlushTask = nil
+                    break
+                }
+            }
+        }
+    }
+
+    private func flushPendingStreamingContent() {
+        guard !pendingStreamingChunks.isEmpty else { return }
+
+        let chunks = pendingStreamingChunks
+        pendingStreamingChunks.removeAll()
+        for (messageID, chunk) in chunks {
+            handleStreamingContent(messageID: messageID, content: chunk)
+        }
+    }
+
     static func mergeStreamingContent(current: String, incoming: String) -> String {
         guard !incoming.isEmpty else { return current }
         guard !current.isEmpty else { return incoming }
@@ -362,6 +408,8 @@ final class SessionNodeViewModel {
     }
     
     private func finalizeStreamingMessage() {
+        flushPendingStreamingContent()
+
         if let messageID = streamingMessageID,
            let index = messages.firstIndex(where: { $0.id == messageID }) {
             messages[index].isStreaming = false
