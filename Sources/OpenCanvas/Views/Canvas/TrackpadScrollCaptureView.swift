@@ -46,6 +46,12 @@ final class ScrollMonitorView: NSView {
             let locationInView = self.convert(locationInWindow, from: nil)
             guard self.bounds.contains(locationInView) else { return event }
 
+            // Pass through if the cursor is over a scrollable view (e.g. session node
+            // message feed) so that native scroll behaviour works for non-maximised nodes.
+            if self.cursorIsOverScrollView(at: locationInWindow) {
+                return event
+            }
+
             // Use precise deltas from trackpad-style scrolling to pan the canvas.
             if !event.hasPreciseScrollingDeltas {
                 return event
@@ -54,6 +60,21 @@ final class ScrollMonitorView: NSView {
             self.onScroll?(CGSize(width: event.scrollingDeltaX, height: event.scrollingDeltaY))
             return nil
         }
+    }
+
+    /// Returns `true` when the deepest `NSView` under `locationInWindow`
+    /// (in the key window's coordinate system) has an `NSScrollView` somewhere
+    /// in its ancestor chain, indicating the event should scroll content rather
+    /// than pan the canvas.
+    private func cursorIsOverScrollView(at locationInWindow: CGPoint) -> Bool {
+        guard let contentView = window?.contentView,
+              let hit = contentView.hitTest(locationInWindow) else { return false }
+        var view: NSView? = hit
+        while let v = view {
+            if v is NSScrollView { return true }
+            view = v.superview
+        }
+        return false
     }
 
     private func stopMonitoring() {
