@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^swift test$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

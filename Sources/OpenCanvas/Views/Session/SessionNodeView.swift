@@ -40,7 +40,6 @@ struct SessionNodeView: View {
         .clipShape(.rect(cornerRadius: node.isMinimized ? 8 : 10))
         .scaleEffect(isDragging ? 1.02 : 1)
         .offset(dragOffset)
-        .animation(.spring(response: 0.3, dampingFraction: 0.72), value: isDragging)
         .highPriorityGesture(dragGesture)
         .simultaneousGesture(longPressGesture)
         .contextMenu {
@@ -257,7 +256,11 @@ struct SessionNodeView: View {
         DragGesture()
             .onChanged { value in
                 guard !appState.isNodeMaximized(node.id) else { return }
-                isDragging = true
+                if !isDragging {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                        isDragging = true
+                    }
+                }
                 dragOffset = CGSize(
                     width: value.translation.width,
                     height: value.translation.height
@@ -265,14 +268,17 @@ struct SessionNodeView: View {
             }
             .onEnded { value in
                 guard !appState.isNodeMaximized(node.id) else { return }
-                isDragging = false
-                dragOffset = .zero
                 
                 let newPosition = CGPoint(
                     x: node.position.x + value.translation.width,
                     y: node.position.y + value.translation.height
                 )
                 appState.updateNodePosition(id: node.id, position: newPosition)
+
+                dragOffset = .zero
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.72)) {
+                    isDragging = false
+                }
             }
     }
     

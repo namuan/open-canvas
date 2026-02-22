@@ -11,6 +11,7 @@ struct CanvasView: View {
     @State private var marqueeStartPoint: CGPoint?
     @State private var marqueeCurrentPoint: CGPoint?
     @State private var canvasViewSize: CGSize = .zero
+    @State private var zoomStartScale: CGFloat?
     @State private var showingSettings = false
     @State private var showingClearConfirmation = false
     
@@ -137,8 +138,16 @@ struct CanvasView: View {
     private var canvasZoomGesture: some Gesture {
         MagnificationGesture()
             .onChanged { scale in
-                let newScale = min(2.5, max(0.3, scale))
+                if zoomStartScale == nil {
+                    zoomStartScale = appState.canvasScale
+                }
+
+                let baseline = zoomStartScale ?? appState.canvasScale
+                let newScale = min(2.5, max(0.3, baseline * scale))
                 appState.updateCanvasScale(newScale)
+            }
+            .onEnded { _ in
+                zoomStartScale = nil
             }
     }
     
