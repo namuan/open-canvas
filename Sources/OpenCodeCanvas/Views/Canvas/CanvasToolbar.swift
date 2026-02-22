@@ -59,18 +59,14 @@ struct CanvasToolbar: ToolbarContent {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+            .padding(.trailing, 10)
             .onTapGesture {
                 showingSettings = true
             }
             .help("Server status - click to open settings")
-            
-            Text("\(appState.activeSessionCount)/\(appState.nodes.count)")
-                .font(.system(.caption, design: .monospaced))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.secondary.opacity(0.2))
-                .clipShape(.rect(cornerRadius: 4))
-                .help("Active/Total sessions")
+
+            Color.clear
+                .frame(width: 14, height: 1)
         }
     }
 }
