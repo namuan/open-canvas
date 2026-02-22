@@ -23,12 +23,6 @@ struct AppCommands: Commands {
             .keyboardShortcut("n", modifiers: .command)
         }
         
-        CommandGroup(after: .toolbar) {
-            Button("Toggle Sidebar") {
-                appState.toggleSidebar()
-            }
-            .keyboardShortcut("s", modifiers: [.command, .shift])
-        }
     }
 }
 

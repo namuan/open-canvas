@@ -56,35 +56,24 @@ struct MainView: View {
     @Environment(AppState.self) private var appState
     
     var body: some View {
-        HStack(spacing: 0) {
-            if appState.sidebarVisible {
-                SidebarView()
-                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340)
-                    .background(Color(nsColor: .windowBackgroundColor))
-                
-                Divider()
-            }
+        ZStack {
+            CanvasView()
             
-            ZStack {
-                CanvasView()
-                
-                if !OpenCodeServerManager.shared.isConnected {
-                    VStack {
-                        Spacer()
-                        offlineBanner
-                    }
-                    .padding(.bottom, 16)
+            if !OpenCodeServerManager.shared.isConnected {
+                VStack {
+                    Spacer()
+                    offlineBanner
                 }
+                .padding(.bottom, 16)
             }
-            .background(
-                LinearGradient(
-                    colors: [.black, Color.black.opacity(0.84), Color.cyan.opacity(0.15)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
         }
-        .animation(.snappy(duration: 0.18), value: appState.sidebarVisible)
+        .background(
+            LinearGradient(
+                colors: [.black, Color.black.opacity(0.84), Color.cyan.opacity(0.15)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
     }
     
     private var offlineBanner: some View {

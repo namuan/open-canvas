@@ -11,7 +11,6 @@ final class PersistenceService {
     private enum Keys {
         static let canvasNodes = "canvasNodes"
         static let serverURL = "serverURL"
-        static let sidebarVisible = "sidebarVisible"
         static let canvasBackgroundStyle = "canvasBackgroundStyle"
         static let defaultNodeColor = "defaultNodeColor"
         static let logLevel = "logLevel"
@@ -84,18 +83,6 @@ final class PersistenceService {
     
     func loadServerURL() -> String {
         defaults.string(forKey: Keys.serverURL) ?? "http://localhost:4097"
-    }
-    
-    func saveSidebarVisible(_ visible: Bool) {
-        defaults.set(visible, forKey: Keys.sidebarVisible)
-        log(.debug, category: .storage, "Saved sidebar visible: \(visible)")
-    }
-    
-    func loadSidebarVisible() -> Bool {
-        if let value = defaults.object(forKey: Keys.sidebarVisible) as? Bool {
-            return value
-        }
-        return true
     }
     
     func saveCanvasBackgroundStyle(_ style: CanvasBackgroundStyle) {

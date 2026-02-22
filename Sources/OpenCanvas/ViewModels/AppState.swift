@@ -11,7 +11,6 @@ final class AppState {
     var canvasOffset: CGSize = .zero
     var canvasScale: CGFloat = 1.0
     var canvasViewportSize: CGSize = .zero
-    var sidebarVisible: Bool = false
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
@@ -23,7 +22,7 @@ final class AppState {
     private var lastActivityUpdateBySessionID: [String: Date] = [:]
     private var scaleSaveTask: Task<Void, Never>?
     private var offsetSaveTask: Task<Void, Never>?
-    
+
     var activeSessionCount: Int {
         nodes.filter { $0.sessionID != nil }.count
     }
@@ -66,8 +65,6 @@ final class AppState {
         nodes = persistenceService.loadNodes()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
-        sidebarVisible = false
-        persistenceService.saveSidebarVisible(false)
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()
         defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
@@ -453,22 +450,6 @@ final class AppState {
     func updateCanvasViewportSize(_ size: CGSize) {
         guard canvasViewportSize != size else { return }
         canvasViewportSize = size
-    }
-    
-    func toggleSidebar() {
-        sidebarVisible.toggle()
-        persistenceService.saveSidebarVisible(sidebarVisible)
-        
-        log(.info, category: .ui, "Toggled sidebar: \(sidebarVisible)")
-    }
-    
-    func setSidebarVisible(_ visible: Bool) {
-        guard sidebarVisible != visible else { return }
-        
-        sidebarVisible = visible
-        persistenceService.saveSidebarVisible(visible)
-        
-        log(.info, category: .ui, "Set sidebar visibility: \(visible)")
     }
     
     func updateBackgroundStyle(_ style: CanvasBackgroundStyle) {

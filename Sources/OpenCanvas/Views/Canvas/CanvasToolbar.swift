@@ -14,13 +14,6 @@ struct CanvasToolbar: ToolbarContent {
             .help("Add new session node (⌘N)")
 
             Button {
-                appState.toggleSidebar()
-            } label: {
-                Label("Toggle Sidebar", systemImage: "sidebar.left")
-            }
-            .help("Show or hide sidebar (⌘⇧S)")
-            
-            Button {
                 appState.autoLayout()
             } label: {
                 Label("Auto Layout", systemImage: "square.grid.3x3")

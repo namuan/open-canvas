@@ -70,7 +70,6 @@ OpenCanvas is a powerful tool for developers who want to run parallel AI coding 
 |----------|--------|
 | `Cmd+N` | Add new session node |
 | `Cmd+W` | Close selected node |
-| `Cmd+Shift+S` | Toggle sidebar |
 | `Cmd+,` | Open Settings |
 | `Cmd+0` | Reset canvas view |
 | `Cmd++` / `Cmd+-` | Zoom in/out |
@@ -93,7 +92,6 @@ Sources/OpenCanvas/
 ├── ViewModels/          # State management (AppState, SessionNodeViewModel, etc.)
 ├── Views/Canvas/        # Canvas rendering and toolbar
 ├── Views/Session/       # Session node UI components
-├── Views/Sidebar/       # Node list sidebar
 ├── Views/Settings/      # Settings interface
 ├── Views/Components/    # Reusable UI components
 ├── Services/            # Networking and persistence
