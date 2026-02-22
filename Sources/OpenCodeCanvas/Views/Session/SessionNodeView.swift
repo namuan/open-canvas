@@ -30,13 +30,12 @@ struct SessionNodeView: View {
         .overlay {
             RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
                 .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 2 : 1)
+                .animation(.easeInOut(duration: 0.15), value: appState.isNodeSelected(node.id))
         }
         .clipShape(.rect(cornerRadius: node.isMinimized ? 8 : 10))
         .scaleEffect(isDragging ? 1.02 : 1)
         .offset(dragOffset)
         .animation(.spring(response: 0.3, dampingFraction: 0.72), value: isDragging)
-        .animation(.easeInOut(duration: 0.2), value: appState.selectedNodeID)
-        .animation(.easeInOut(duration: 0.2), value: appState.selectedNodeIDs)
         .gesture(dragGesture)
         .simultaneousGesture(longPressGesture)
         .contextMenu {

@@ -40,8 +40,6 @@ struct CanvasView: View {
                             height: node.isMinimized ? 72 : node.size.height
                         )
                         .zIndex(zIndexForNode(node, index: index))
-                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeID)
-                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: appState.selectedNodeIDs)
                 }
 
                 if let marqueeRect {
