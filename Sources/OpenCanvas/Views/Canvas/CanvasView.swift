@@ -59,7 +59,7 @@ struct CanvasView: View {
                 .allowsHitTesting(false)
             }
             #endif
-            .gesture(canvasDragGesture)
+            .gesture(canvasDragGesture, including: .gesture)
             .simultaneousGesture(canvasZoomGesture)
             .simultaneousGesture(doubleTapToAddNode(geometry: geometry))
             .onTapGesture {
