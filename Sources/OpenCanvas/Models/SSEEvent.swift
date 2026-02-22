@@ -38,6 +38,7 @@ enum SSEEventType: String, Codable, Sendable, CaseIterable {
     case questionRejected = "question.rejected"
     case globalDisposed = "global.disposed"
     case serverInstanceDisposed = "server.instance.disposed"
+    case sessionDiff = "session.diff"
 }
 
 struct SSEEvent: Sendable {

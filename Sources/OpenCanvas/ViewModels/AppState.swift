@@ -22,6 +22,7 @@ final class AppState {
     private let persistenceService = PersistenceService.shared
     private var cancellables = Set<AnyCancellable>()
     private var lastActivityUpdateBySessionID: [String: Date] = [:]
+    private var sessionsTitleFetched: Set<String> = []
     private var scaleSaveTask: Task<Void, Never>?
     private var offsetSaveTask: Task<Void, Never>?
 
@@ -112,7 +113,10 @@ final class AppState {
     }
     
     private func handleSSEEvent(_ event: SSEEvent) {
-        guard let sessionID = event.sessionID else { return }
+        guard let sessionID = event.sessionID else {
+            log(.debug, category: .sse, "AppState SSE event \(event.type) has no sessionID, skipping")
+            return
+        }
         
         if let nodeIndex = nodes.firstIndex(where: { $0.sessionID == sessionID }) {
             if shouldUpdateLastActivity(for: event.type),
@@ -125,14 +129,60 @@ final class AppState {
             switch event.type {
             case .sessionStatus:
                 if let status = event.status {
-                    log(.debug, category: .sse, "Session \(sessionID) status: \(status)")
+                    log(.info, category: .sse, "AppState: session \(sessionID) status=\(status)")
+                    if status == "idle" {
+                        fetchAndUpdateTitle(sessionID: sessionID)
+                    }
                 }
+            case .sessionIdle:
+                log(.info, category: .sse, "AppState: sessionIdle for \(sessionID)")
+                fetchAndUpdateTitle(sessionID: sessionID)
             case .sessionError:
                 if let error = event.error {
                     log(.error, category: .sse, "Session \(sessionID) error: \(error)")
                 }
             default:
                 break
+            }
+        } else {
+            log(.debug, category: .sse, "AppState SSE event \(event.type) for sessionID \(sessionID) — no matching node found")
+        }
+    }
+
+    private func fetchAndUpdateTitle(sessionID: String) {
+        guard !sessionsTitleFetched.contains(sessionID) else {
+            log(.info, category: .session, "Title already fetched for session \(sessionID), skipping")
+            return
+        }
+        sessionsTitleFetched.insert(sessionID)
+        log(.info, category: .session, "Fetching title for session \(sessionID)")
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let session = try await serverManager.getSession(id: sessionID)
+                log(.info, category: .session, "Got session \(sessionID): title=\(session.title ?? "<nil>")")
+                guard let title = session.title, !title.isEmpty else {
+                    log(.info, category: .session, "Session \(sessionID) has no title yet, will not update node")
+                    // Allow retry on next idle since title isn't set yet
+                    sessionsTitleFetched.remove(sessionID)
+                    return
+                }
+                if let nodeIndex = nodes.firstIndex(where: { $0.sessionID == sessionID }) {
+                    let oldTitle = nodes[nodeIndex].title
+                    if oldTitle != title {
+                        nodes[nodeIndex].title = title
+                        saveNodes()
+                        log(.info, category: .session, "Updated node title: '\(oldTitle)' → '\(title)' for session \(sessionID)")
+                    } else {
+                        log(.info, category: .session, "Node title unchanged ('\(title)') for session \(sessionID)")
+                    }
+                } else {
+                    log(.warning, category: .session, "No node found for session \(sessionID) after title fetch")
+                }
+            } catch {
+                // Roll back so it can retry on next idle
+                sessionsTitleFetched.remove(sessionID)
+                log(.error, category: .session, "Failed to fetch session title for \(sessionID): \(error.localizedDescription)")
             }
         }
     }

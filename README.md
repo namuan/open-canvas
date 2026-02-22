@@ -3,6 +3,8 @@
 A native macOS desktop application that provides an infinite, zoomable canvas where developers can create, arrange, and
 manage multiple OpenCode AI sessions simultaneously.
 
+![](assets/intro.png)
+
 ## Overview
 
 OpenCanvas is a powerful tool for developers who want to run parallel AI coding tasks without context-switching between

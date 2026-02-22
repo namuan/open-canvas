@@ -5,7 +5,7 @@ import AppKit
 #endif
 
 #if os(macOS)
-private func selectDirectory(prompt: String = "Select Directory", message: String = "Choose a working directory for this session") -> String? {
+@MainActor private func selectDirectory(prompt: String = "Select Directory", message: String = "Choose a working directory for this session") -> String? {
     let panel = NSOpenPanel()
     panel.canChooseDirectories = true
     panel.canChooseFiles = false

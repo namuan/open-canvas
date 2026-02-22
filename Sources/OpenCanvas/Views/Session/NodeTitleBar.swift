@@ -11,6 +11,7 @@ struct NodeTitleBar: View {
     @State private var isEditing = false
     @State private var editedTitle = ""
     @State private var expandHighlight = false
+    @State private var sessionIDCopied = false
     @FocusState private var isTitleFocused: Bool
     @Environment(\.sessionFontSize) private var sessionFontSize
     
@@ -54,9 +55,27 @@ struct NodeTitleBar: View {
             }
 
             if let sessionID {
-                Text(sessionID.truncated(to: 12))
-                    .font(.system(size: max(9, sessionFontSize - 3), design: .monospaced))
-                .foregroundStyle(.secondary)
+                Button {
+                    NSPasteboard.general.clearContents()
+                    NSPasteboard.general.setString("opencode -s \(sessionID)", forType: .string)
+                    sessionIDCopied = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        sessionIDCopied = false
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        if sessionIDCopied {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: max(8, sessionFontSize - 4), weight: .semibold))
+                        }
+                        Text(sessionID.truncated(to: 12))
+                            .font(.system(size: max(9, sessionFontSize - 3), design: .monospaced))
+                    }
+                    .foregroundStyle(sessionIDCopied ? Color.green : Color.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Copy: opencode -s \(sessionID)")
+                .animation(.easeInOut(duration: 0.2), value: sessionIDCopied)
             }
         }
         .padding(.horizontal, 10)

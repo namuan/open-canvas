@@ -55,16 +55,16 @@ struct CanvasView: View {
             .contentShape(Rectangle())
             #if os(macOS)
             .overlay {
-                TrackpadScrollCaptureView(isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode || appState.isHoveringOverSettings) { delta in
-                    guard !isMarqueeSelecting else { return }
+                TrackpadScrollCaptureView(onScroll: { delta in
+                            guard !isMarqueeSelecting else { return }
 
-                    let newOffset = CGSize(
-                        width: appState.canvasOffset.width + delta.width,
-                        height: appState.canvasOffset.height + delta.height
-                    )
-                    appState.updateCanvasOffset(newOffset)
-                }
-                .allowsHitTesting(false)
+                            let newOffset = CGSize(
+                                width: appState.canvasOffset.width + delta.width,
+                                height: appState.canvasOffset.height + delta.height
+                            )
+                            appState.updateCanvasOffset(newOffset)
+                        }, isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode || appState.isHoveringOverSettings)
+                        .allowsHitTesting(false)
             }
             #endif
             .gesture(canvasDragGesture, including: .gesture)

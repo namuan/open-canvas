@@ -218,7 +218,6 @@ final class OpenCodeServerManager {
     private func checkHealth() async {
         guard let url = baseURL?.appendingPathComponent("global/health") else {
             connectionError = "Invalid server URL"
-            log(.error, category: .network, "Invalid server URL: \(serverURL)")
             return
         }
         
@@ -243,12 +242,10 @@ final class OpenCodeServerManager {
             serverVersion = healthResponse.version
             connectionError = nil
             retryCount = 0
-            log(.info, category: .network, "Connected to OpenCode server v\(healthResponse.version)")
         } catch {
             isConnected = false
             if retryCount == 0 {
                 connectionError = "Server not available at \(serverURL)"
-                log(.warning, category: .network, "OpenCode server not available at \(serverURL)")
             }
             retryCount += 1
         }
@@ -348,7 +345,7 @@ final class OpenCodeServerManager {
             eventJson = outerJson
         }
 
-        guard let eventJsonData = try? JSONSerialization.data(withJSONObject: eventJson),
+        guard let _ = try? JSONSerialization.data(withJSONObject: eventJson),
               let typeString = eventJson["type"] as? String,
               let eventType = SSEEventType(rawValue: typeString) else {
             log(.error, category: .sse, "Failed to parse SSE event type")
@@ -359,8 +356,14 @@ final class OpenCodeServerManager {
 
         let event = SSEEvent(type: eventType, rawData: jsonData, jsonObject: eventJson)
         
-        if eventType != .messagePartDelta, eventType != .messagePartUpdated, eventType != .serverHeartbeat {
-            log(.debug, category: .sse, "Decoded SSE event: type=\(event.type)")
+        switch eventType {
+        case .messagePartDelta, .messagePartUpdated:
+            log(.debug, category: .sse, "SSE \(eventType.rawValue) sessionID=\(event.sessionID ?? "-")")
+        case .serverHeartbeat:
+            break
+        default:
+            let sessionPart = event.sessionID.map { " sessionID=\($0)" } ?? ""
+            log(.info, category: .sse, "SSE \(eventType.rawValue)\(sessionPart)")
         }
         
         if event.type == .serverConnected {
@@ -380,6 +383,16 @@ final class OpenCodeServerManager {
         let sessions: [OCSession] = try await get(url)
         log(.debug, category: .network, "Listed \(sessions.count) sessions")
         return sessions
+    }
+    
+    func getSession(id: String) async throws -> OCSession {
+        guard let url = baseURL?.appendingPathComponent("session/\(id)") else {
+            throw OpenCodeError.invalidURL
+        }
+        
+        let session: OCSession = try await get(url)
+        log(.debug, category: .network, "Got session: \(id)")
+        return session
     }
     
     func createSession(model: String? = nil) async throws -> OCSession {
