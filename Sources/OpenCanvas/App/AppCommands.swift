@@ -94,6 +94,14 @@ struct NodeCommands: Commands {
             }
             .keyboardShortcut("w", modifiers: .command)
             .disabled(!appState.hasSelection)
+
+            Button("Delete Selected Nodes") {
+                Task {
+                    await appState.deleteSelectedNodes()
+                }
+            }
+            .keyboardShortcut(.delete, modifiers: [])
+            .disabled(!appState.hasSelection)
             
             Button("Duplicate Selected Node") {
                 if let nodeID = appState.selectedNodeID {

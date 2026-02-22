@@ -205,6 +205,13 @@ final class AppState {
         log(.info, category: .canvas, "Added node \(node.id) at \(nodePosition)")
     }
     
+    func removeSelectedNodes() async {
+        let idsToRemove = Array(selectedNodeIDs)
+        for id in idsToRemove {
+            await removeNode(id: id)
+        }
+    }
+
     func removeNode(id: UUID) async {
         guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
         

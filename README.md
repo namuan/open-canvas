@@ -1,10 +1,13 @@
 # OpenCanvas
 
-A native macOS desktop application that provides an infinite, zoomable canvas where developers can create, arrange, and manage multiple OpenCode AI sessions simultaneously.
+A native macOS desktop application that provides an infinite, zoomable canvas where developers can create, arrange, and
+manage multiple OpenCode AI sessions simultaneously.
 
 ## Overview
 
-OpenCanvas is a powerful tool for developers who want to run parallel AI coding tasks without context-switching between terminal windows. Each session is represented as an interactive node on the canvas — a draggable card that owns its own OpenCode server session, chat history, and real-time status.
+OpenCanvas is a powerful tool for developers who want to run parallel AI coding tasks without context-switching between
+terminal windows. Each session is represented as an interactive node on the canvas — a draggable card that owns its own
+OpenCode server session, chat history, and real-time status.
 
 ## Features
 
@@ -66,20 +69,21 @@ OpenCanvas is a powerful tool for developers who want to run parallel AI coding 
 
 ### Keyboard Shortcuts
 
-| Shortcut | Action |
-|----------|--------|
-| `Cmd+N` | Add new session node |
-| `Cmd+W` | Close selected node |
-| `Cmd+,` | Open Settings |
-| `Cmd+0` | Reset canvas view |
-| `Cmd++` / `Cmd+-` | Zoom in/out |
-| `Cmd+Shift+L` | Auto-layout all nodes |
-| `Cmd+K` | Clear canvas |
-| `Cmd+Return` | Send message |
-| `Esc` | Cancel/clear prompt |
-| `Cmd+Shift+A` | Abort running session |
-| `Cmd+F` | Fork selected node's session |
-| `Tab` | Cycle focus to next node |
+| Shortcut               | Action                       |
+|------------------------|------------------------------|
+| `Cmd+N`                | Add new session node         |
+| `Cmd+W`                | Close selected node          |
+| `Cmd+,`                | Open Settings                |
+| `Cmd+0`                | Reset canvas view            |
+| `Cmd++` / `Cmd+-`      | Zoom in/out                  |
+| `Cmd+Shift+L`          | Auto-layout all nodes        |
+| `Cmd+K`                | Clear canvas                 |
+| `Cmd+Return`           | Send message                 |
+| `Esc`                  | Cancel/clear prompt          |
+| `Cmd+Shift+A`          | Abort running session        |
+| `Cmd+F`                | Fork selected node's session |
+| `Tab`                  | Cycle focus to next node     |
+| `Backspace` / `Delete` | Delete selected node(s)      |
 
 ## Architecture
 
@@ -100,7 +104,8 @@ Sources/OpenCanvas/
 
 ### State Management
 
-The application uses SwiftUI's native observation stack with @StateObject, @ObservedObject, and @EnvironmentObject. The AppState object serves as the single source of truth for all nodes and canvas state.
+The application uses SwiftUI's native observation stack with @StateObject, @ObservedObject, and @EnvironmentObject. The
+AppState object serves as the single source of truth for all nodes and canvas state.
 
 ### Networking
 
@@ -132,6 +137,7 @@ swift build -c release
 ### Code Style
 
 The project follows Swift style guidelines with:
+
 - SwiftLint for code quality
 - SwiftUI best practices
 - SwiftUI Concurrency for async operations
@@ -142,6 +148,7 @@ The project follows Swift style guidelines with:
 ### Server Settings
 
 OpenCanvas connects to a locally running OpenCode server by default at `http://localhost:4096`. You can configure:
+
 - Server URL
 - Basic authentication credentials
 - Connection health monitoring
@@ -149,6 +156,7 @@ OpenCanvas connects to a locally running OpenCode server by default at `http://l
 ### Appearance
 
 Customize the canvas appearance:
+
 - Background style (dot grid, line grid, none)
 - Default node size and color
 - Font size in message feeds
@@ -168,6 +176,7 @@ Extensive file-based logging with rolling logs under `~/Library/Logs/OpenCanvas/
 ### Debug Mode
 
 Enable debug logging in Settings → Logging to get detailed information about:
+
 - Network requests and responses
 - SSE event stream processing
 - Canvas rendering operations
