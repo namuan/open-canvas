@@ -3,7 +3,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-APP_NAME="OpenCodeCanvas"
+APP_NAME="OpenCanvas"
 APP_BUNDLE="$APP_NAME.app"
 DEST_DIR="$HOME/Applications"
 OPEN_AFTER_INSTALL=false
@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 echo "=========================================="
-echo "  OpenCode Canvas Installer"
+echo "  OpenCanvas Installer"
 echo "=========================================="
 echo ""
 
@@ -70,15 +70,15 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleExecutable</key>
-    <string>OpenCodeCanvas</string>
+    <string>OpenCanvas</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
-    <string>com.opencodecanvas.app</string>
+    <string>com.opencanvas.app</string>
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleName</key>
-    <string>OpenCode Canvas</string>
+    <string>OpenCanvas</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
@@ -92,7 +92,7 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'EOF'
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.developer-tools</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2026 OpenCode Canvas. All rights reserved.</string>
+    <string>Copyright © 2026 OpenCanvas. All rights reserved.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
 </dict>
@@ -163,12 +163,12 @@ echo "=========================================="
 echo "  Installation Complete!"
 echo "=========================================="
 echo ""
-echo "OpenCode Canvas has been installed to:"
+echo "OpenCanvas has been installed to:"
 echo "  $DEST_DIR/$APP_BUNDLE"
 echo ""
 
 if [ "$OPEN_AFTER_INSTALL" = true ]; then
-    echo "Launching OpenCode Canvas..."
+    echo "Launching OpenCanvas..."
     open "$DEST_DIR/$APP_BUNDLE"
 else
     echo "To launch:"

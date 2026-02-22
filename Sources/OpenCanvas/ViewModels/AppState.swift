@@ -11,7 +11,7 @@ final class AppState {
     var canvasOffset: CGSize = .zero
     var canvasScale: CGFloat = 1.0
     var canvasViewportSize: CGSize = .zero
-    var sidebarVisible: Bool = true
+    var sidebarVisible: Bool = false
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
@@ -66,7 +66,6 @@ final class AppState {
         nodes = persistenceService.loadNodes()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
-        // Always start with sidebar closed on app launch.
         sidebarVisible = false
         persistenceService.saveSidebarVisible(false)
         canvasBackgroundStyle = persistenceService.loadCanvasBackgroundStyle()

@@ -200,7 +200,7 @@ struct AboutSettingsTab: View {
                 .font(.system(size: 64))
                 .foregroundStyle(.blue)
             
-            Text("OpenCode Canvas")
+            Text("OpenCanvas")
                 .font(.system(size: 24, weight: .bold))
             
             Text("A Multi-Session Node Canvas for macOS")

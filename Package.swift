@@ -2,29 +2,29 @@
 import PackageDescription
 
 let package = Package(
-    name: "OpenCodeCanvas",
+    name: "OpenCanvas",
     platforms: [
         .macOS(.v14)
     ],
     products: [
         .executable(
-            name: "OpenCodeCanvas",
-            targets: ["OpenCodeCanvas"]
+            name: "OpenCanvas",
+            targets: ["OpenCanvas"]
         )
     ],
     targets: [
         .executableTarget(
-            name: "OpenCodeCanvas",
+            name: "OpenCanvas",
             dependencies: [],
-            path: "Sources/OpenCodeCanvas",
+            path: "Sources/OpenCanvas",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency")
             ]
         ),
         .testTarget(
-            name: "OpenCodeCanvasTests",
+            name: "OpenCanvasTests",
             dependencies: [],
-            path: "Tests/OpenCodeCanvasTests"
+            path: "Tests/OpenCanvasTests"
         )
     ]
 )

@@ -5,10 +5,10 @@ struct AppCommands: Commands {
     
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
-            Button("About OpenCode Canvas") {
+            Button("About OpenCanvas") {
                 NSApplication.shared.orderFrontStandardAboutPanel(
                     options: [
-                        .applicationName: "OpenCode Canvas",
+                        .applicationName: "OpenCanvas",
                         .applicationVersion: "1.0.0",
                         .version: "1"
                     ]

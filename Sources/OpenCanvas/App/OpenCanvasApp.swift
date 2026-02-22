@@ -9,19 +9,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func applicationWillTerminate(_ notification: Notification) {
-        log(.info, category: .app, "OpenCode Canvas terminating...")
+        log(.info, category: .app, "OpenCanvas terminating...")
     }
 }
 
 @main
-struct OpenCodeCanvasApp: App {
+struct OpenCanvasApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var appState = AppState()
     
     init() {
         AppLogger.shared.setLogLevel(.info)
-        log(.info, category: .app, "OpenCode Canvas starting...")
-        print("OpenCode Canvas starting...")
+        log(.info, category: .app, "OpenCanvas starting...")
+        print("OpenCanvas starting...")
     }
     
     var body: some Scene {
@@ -56,10 +56,15 @@ struct MainView: View {
     @Environment(AppState.self) private var appState
     
     var body: some View {
-        NavigationSplitView(columnVisibility: splitVisibility) {
-            SidebarView()
-                .navigationSplitViewColumnWidth(min: 240, ideal: 280, max: 340)
-        } detail: {
+        HStack(spacing: 0) {
+            if appState.sidebarVisible {
+                SidebarView()
+                    .frame(minWidth: 240, idealWidth: 280, maxWidth: 340)
+                    .background(Color(nsColor: .windowBackgroundColor))
+                
+                Divider()
+            }
+            
             ZStack {
                 CanvasView()
                 
@@ -79,15 +84,7 @@ struct MainView: View {
                 )
             )
         }
-    }
-    
-    private var splitVisibility: Binding<NavigationSplitViewVisibility> {
-        Binding(
-            get: { appState.sidebarVisible ? .all : .detailOnly },
-            set: { newValue in
-                appState.setSidebarVisible(newValue != .detailOnly)
-            }
-        )
+        .animation(.snappy(duration: 0.18), value: appState.sidebarVisible)
     }
     
     private var offlineBanner: some View {

@@ -1,10 +1,10 @@
-# OpenCode Canvas
+# OpenCanvas
 
 A native macOS desktop application that provides an infinite, zoomable canvas where developers can create, arrange, and manage multiple OpenCode AI sessions simultaneously.
 
 ## Overview
 
-OpenCode Canvas is a powerful tool for developers who want to run parallel AI coding tasks without context-switching between terminal windows. Each session is represented as an interactive node on the canvas — a draggable card that owns its own OpenCode server session, chat history, and real-time status.
+OpenCanvas is a powerful tool for developers who want to run parallel AI coding tasks without context-switching between terminal windows. Each session is represented as an interactive node on the canvas — a draggable card that owns its own OpenCode server session, chat history, and real-time status.
 
 ## Features
 
@@ -35,7 +35,7 @@ OpenCode Canvas is a powerful tool for developers who want to run parallel AI co
 2. Build and run the application:
    ```bash
    swift build
-   ./.build/debug/OpenCodeCanvas
+   ./.build/debug/OpenCanvas
    ```
 
 ### Setup
@@ -45,7 +45,7 @@ OpenCode Canvas is a powerful tool for developers who want to run parallel AI co
    opencode serve
    ```
 
-2. Launch OpenCode Canvas
+2. Launch OpenCanvas
 3. The app will automatically connect to `http://localhost:4096`
 
 ## Usage
@@ -87,7 +87,7 @@ OpenCode Canvas is a powerful tool for developers who want to run parallel AI co
 ### Project Structure
 
 ```
-Sources/OpenCodeCanvas/
+Sources/OpenCanvas/
 ├── App/                 # App entry point and commands
 ├── Models/              # Data models (CanvasNode, OCSession, OCMessage, etc.)
 ├── ViewModels/          # State management (AppState, SessionNodeViewModel, etc.)
@@ -143,7 +143,7 @@ The project follows Swift style guidelines with:
 
 ### Server Settings
 
-OpenCode Canvas connects to a locally running OpenCode server by default at `http://localhost:4096`. You can configure:
+OpenCanvas connects to a locally running OpenCode server by default at `http://localhost:4096`. You can configure:
 - Server URL
 - Basic authentication credentials
 - Connection health monitoring
@@ -157,7 +157,7 @@ Customize the canvas appearance:
 
 ### Logging
 
-Extensive file-based logging with rolling logs under `~/Library/Logs/OpenCodeCanvas/` for debugging and observability.
+Extensive file-based logging with rolling logs under `~/Library/Logs/OpenCanvas/` for debugging and observability.
 
 ## Troubleshooting
 

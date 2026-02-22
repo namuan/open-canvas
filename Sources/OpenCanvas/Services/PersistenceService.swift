@@ -92,7 +92,10 @@ final class PersistenceService {
     }
     
     func loadSidebarVisible() -> Bool {
-        defaults.bool(forKey: Keys.sidebarVisible)
+        if let value = defaults.object(forKey: Keys.sidebarVisible) as? Bool {
+            return value
+        }
+        return true
     }
     
     func saveCanvasBackgroundStyle(_ style: CanvasBackgroundStyle) {

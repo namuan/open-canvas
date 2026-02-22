@@ -5,7 +5,7 @@
 <tbody>
 <tr class="odd">
 <td><p><strong>RFC-001</strong></p>
-<p><strong>OpenCode Canvas</strong></p>
+<p><strong>OpenCanvas</strong></p>
 <p>A Multi-Session Node Canvas for macOS</p>
 <p>Swift · SwiftUI · OpenCode HTTP API · SSE</p></td>
 </tr>
@@ -23,7 +23,7 @@
 
 **1. Executive Overview**
 
-OpenCode Canvas is a native macOS desktop application that provides an
+OpenCanvas is a native macOS desktop application that provides an
 infinite, zoomable canvas where developers can create, arrange, and
 manage multiple OpenCode AI sessions simultaneously. Each session is
 represented as an interactive node on the canvas — a draggable card that
@@ -37,7 +37,7 @@ workspace.
 
 |       |                                                                                                                                                              |
 |-------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **ℹ** | OpenCode Canvas connects to a locally running OpenCode server (opencode serve) via its HTTP API and SSE event stream. It does not bundle its own AI runtime. |
+| **ℹ** | OpenCanvas connects to a locally running OpenCode server (opencode serve) via its HTTP API and SSE event stream. It does not bundle its own AI runtime. |
 
 **1.1 Core Value Proposition**
 
@@ -72,7 +72,7 @@ workspace.
   actions.
 
 - **Robust observability:** Extensive file-based logging with rolling
-  logs under ~/Library/Logs/OpenCodeCanvas/ for every meaningful event.
+  logs under ~/Library/Logs/OpenCanvas/ for every meaningful event.
 
 **2. Product Specification**
 
@@ -383,20 +383,20 @@ AppLogger is a final class singleton (AppLogger.shared) initialized at
 app launch in the @main struct's init(). It wraps both Apple's OSLog
 framework (for Console.app integration) and file-based rolling logs.
 
-**Log directory:** ~/Library/Logs/OpenCodeCanvas/
+**Log directory:** ~/Library/Logs/OpenCanvas/
 
 **3.5.2 Rolling File Strategy**
 
-- Active log file: OpenCodeCanvas.log
+- Active log file: OpenCanvas.log
 
 - On exceeding 5 MB, the active file is renamed to
-  OpenCodeCanvas-{unix_timestamp}.log
+  OpenCanvas-{unix_timestamp}.log
 
 - A maximum of 5 archived files are retained; oldest are deleted on
   rotation
 
 - All file I/O is dispatched on a dedicated serial DispatchQueue
-  (com.opencodecanvas.logger, .utility QoS) to avoid blocking the main
+  (com.opencanvas.logger, .utility QoS) to avoid blocking the main
   thread
 
 **3.5.3 Log Categories**
@@ -660,7 +660,7 @@ always preserved even if the OpenCode server was restarted.
 </colgroup>
 <tbody>
 <tr class="odd">
-<td><p><strong>RFC-001 · OpenCode Canvas</strong></p>
+<td><p><strong>RFC-001 · OpenCanvas</strong></p>
 <p>Document status: Draft · Platform: macOS 14.0+ · Swift 5.9 /
 SwiftUI</p></td>
 </tr>

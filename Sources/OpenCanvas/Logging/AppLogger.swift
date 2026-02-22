@@ -14,9 +14,9 @@ enum LogCategory: String, CaseIterable, Sendable {
 final class AppLogger: @unchecked Sendable {
     static let shared = AppLogger()
     
-    private let osLog = Logger(subsystem: "com.opencodecanvas.app", category: "App")
+    private let osLog = Logger(subsystem: "com.opencanvas.app", category: "App")
     private let fileManager = FileManager.default
-    private let logQueue = DispatchQueue(label: "com.opencodecanvas.logger", qos: .utility)
+    private let logQueue = DispatchQueue(label: "com.opencanvas.logger", qos: .utility)
     private let timestampFormatter = ISO8601DateFormatter()
     private let logDirectory: URL
     private var currentLogFile: URL
@@ -28,10 +28,10 @@ final class AppLogger: @unchecked Sendable {
         let logsURL = fileManager.urls(for: .libraryDirectory, in: .userDomainMask)
             .first!
             .appendingPathComponent("Logs", isDirectory: true)
-            .appendingPathComponent("OpenCodeCanvas", isDirectory: true)
+            .appendingPathComponent("OpenCanvas", isDirectory: true)
         
         logDirectory = logsURL
-        currentLogFile = logsURL.appendingPathComponent("OpenCodeCanvas.log")
+        currentLogFile = logsURL.appendingPathComponent("OpenCanvas.log")
         
         do {
             try fileManager.createDirectory(at: logDirectory, withIntermediateDirectories: true)
@@ -94,7 +94,7 @@ final class AppLogger: @unchecked Sendable {
     
     private func rotateLog() {
         let timestamp = Int(Date().timeIntervalSince1970)
-        let archiveURL = logDirectory.appendingPathComponent("OpenCodeCanvas-\(timestamp).log")
+        let archiveURL = logDirectory.appendingPathComponent("OpenCanvas-\(timestamp).log")
         
         do {
             try fileManager.moveItem(at: currentLogFile, to: archiveURL)
@@ -113,7 +113,7 @@ final class AppLogger: @unchecked Sendable {
             )
             
             let archives = files
-                .filter { $0.lastPathComponent.hasPrefix("OpenCodeCanvas-") }
+                .filter { $0.lastPathComponent.hasPrefix("OpenCanvas-") }
                 .sorted { url1, url2 in
                     let date1 = (try? url1.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date.distantPast
                     let date2 = (try? url2.resourceValues(forKeys: [.creationDateKey]).creationDate) ?? Date.distantPast
@@ -131,7 +131,7 @@ final class AppLogger: @unchecked Sendable {
     }
     
     private func logToOS(level: LogLevel, category: LogCategory, message: String) {
-        let logger = Logger(subsystem: "com.opencodecanvas.app", category: category.rawValue)
+        let logger = Logger(subsystem: "com.opencanvas.app", category: category.rawValue)
         switch level {
         case .debug:
             logger.debug("\(message, privacy: .public)")
