@@ -19,6 +19,7 @@ final class PersistenceService {
         static let expandedFontSize = "expandedFontSize"
         static let opencodeBinaryPath = "opencodeBinaryPath"
         static let managedServerPort = "managedServerPort"
+        static let managedServerPID = "managedServerPID"
     }
     
     private init() {}
@@ -170,5 +171,19 @@ final class PersistenceService {
     /// Returns 0 if no port has been persisted yet.
     func loadManagedServerPort() -> Int {
         defaults.integer(forKey: Keys.managedServerPort)
+    }
+
+    func saveManagedServerPID(_ pid: Int32) {
+        defaults.set(Int(pid), forKey: Keys.managedServerPID)
+        log(.debug, category: .storage, "Saved managed server PID: \(pid)")
+    }
+
+    /// Returns 0 if no PID has been persisted yet.
+    func loadManagedServerPID() -> Int32 {
+        Int32(defaults.integer(forKey: Keys.managedServerPID))
+    }
+
+    func clearManagedServerPID() {
+        defaults.removeObject(forKey: Keys.managedServerPID)
     }
 }

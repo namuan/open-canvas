@@ -46,15 +46,20 @@ final class AppState {
     func initialize() async {
         loadPersistedState()
 
-        let savedURL = persistenceService.loadServerURL()
-        serverManager.configure(url: savedURL)
+        // Check if the previously managed server process is still alive
+        let previousServerAlive = serverManager.detectRunningManagedServer()
+
+        // If a live managed server was detected its URL is already set; otherwise use the persisted URL.
+        if !previousServerAlive {
+            serverManager.serverURL = persistenceService.loadServerURL()
+        }
         await serverManager.connect()
 
         if !serverManager.isConnected {
-            log(.info, category: .app, "Server not reachable at \(savedURL) — auto-starting managed opencode server")
+            log(.info, category: .app, "Server not reachable at \(serverManager.serverURL) — auto-starting managed opencode server")
             let binaryPath = persistenceService.loadOpencodeBinaryPath()
             await serverManager.startManagedServer(binaryPath: binaryPath)
-            // Persist the randomly assigned URL so Settings reflects it
+            // Persist the assigned URL so Settings reflects it on next Settings open
             persistenceService.saveServerURL(serverManager.serverURL)
         }
         

@@ -44,7 +44,6 @@ final class OpenCodeServerManager {
         eventSubject.eraseToAnyPublisher()
     }
     
-    private(set) var isServerManaged: Bool = false
     private var serverProcess: Process?
     var isServerRunning: Bool { serverProcess?.isRunning ?? false }
 
@@ -132,7 +131,6 @@ final class OpenCodeServerManager {
         process.terminationHandler = { [weak self] p in
             Task { @MainActor [weak self] in
                 self?.serverProcess = nil
-                self?.isServerManaged = false
                 log(.info, category: .network, "opencode server process terminated (status \(p.terminationStatus))")
             }
         }
@@ -140,9 +138,9 @@ final class OpenCodeServerManager {
         do {
             try process.run()
             serverProcess = process
-            isServerManaged = true
             serverURL = url
-            log(.info, category: .network, "Started managed opencode server: \(resolvedPath) serve --port \(port)")
+            persistence.saveManagedServerPID(process.processIdentifier)
+            log(.info, category: .network, "Started managed opencode server: \(resolvedPath) serve --port \(port) (PID \(process.processIdentifier))")
             // Give the server a moment to start before connecting
             try? await Task.sleep(for: .seconds(1.5))
             await reconnect()
@@ -158,8 +156,31 @@ final class OpenCodeServerManager {
             log(.info, category: .network, "Terminated managed opencode server process")
         }
         serverProcess = nil
-        isServerManaged = false
+        PersistenceService.shared.clearManagedServerPID()
         disconnect()
+    }
+
+    /// Called at startup to detect whether the previously managed server process is still alive.
+    /// If so, restores the server URL without re-launching and returns true.
+    @discardableResult
+    func detectRunningManagedServer() -> Bool {
+        let persistence = PersistenceService.shared
+        let pid = persistence.loadManagedServerPID()
+        guard pid > 0 else { return false }
+
+        // kill(pid, 0) returns 0 if the process exists and we can signal it.
+        let alive = Darwin.kill(pid, 0) == 0
+        if alive {
+            let port = persistence.loadManagedServerPort()
+            if port > 0 {
+                serverURL = "http://localhost:\(port)"
+            }
+            log(.info, category: .network, "Detected previously managed opencode server still running (PID \(pid), port \(port))")
+        } else {
+            persistence.clearManagedServerPID()
+            log(.info, category: .network, "Previously managed opencode server (PID \(pid)) is no longer running")
+        }
+        return alive
     }
 
     private func findOpencodeBinary() async -> String? {

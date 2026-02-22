@@ -4,8 +4,12 @@ import SwiftUI
 @MainActor
 @Observable
 final class SettingsViewModel {
-    var serverURL: String = "http://localhost:4096"
+    // serverURL is always the live value from the manager — single source of truth
+    var serverURL: String { serverManager.serverURL }
+
     var opencodeBinaryPath: String = ""
+    /// Editable port string; reflects the persisted managed-server port.
+    var managedServerPort: String = ""
     var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
     var normalFontSize: CGFloat = 13
@@ -15,17 +19,22 @@ final class SettingsViewModel {
     private let serverManager = OpenCodeServerManager.shared
     
     func loadSettings() {
-        serverURL = persistenceService.loadServerURL()
         opencodeBinaryPath = persistenceService.loadOpencodeBinaryPath()
+        let port = persistenceService.loadManagedServerPort()
+        managedServerPort = port > 0 ? "\(port)" : ""
         nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
         normalFontSize = persistenceService.loadNormalFontSize()
         expandedFontSize = persistenceService.loadExpandedFontSize()
     }
-    
-    func saveServerURL() {
-        persistenceService.saveServerURL(serverURL)
-        serverManager.configure(url: serverURL)
+
+    /// Save and apply an edited port (only valid when server is stopped).
+    func applyPortChange() {
+        guard let port = Int(managedServerPort), port > 0 else { return }
+        persistenceService.saveManagedServerPort(port)
+        // Update the live URL immediately so the read-only label refreshes.
+        serverManager.serverURL = "http://localhost:\(port)"
+        persistenceService.saveServerURL(serverManager.serverURL)
     }
 
     func saveOpencodeBinaryPath() {
@@ -34,17 +43,16 @@ final class SettingsViewModel {
 
     func startManagedServer() async {
         await serverManager.startManagedServer(binaryPath: opencodeBinaryPath)
-        // Sync the randomly assigned port URL back so the TextField reflects it
-        serverURL = serverManager.serverURL
-        persistenceService.saveServerURL(serverURL)
+        // Sync the assigned port back to the editable field
+        let port = persistenceService.loadManagedServerPort()
+        managedServerPort = port > 0 ? "\(port)" : ""
     }
 
     func stopManagedServer() {
         serverManager.stopManagedServer()
     }
 
-    var isServerManaged: Bool { serverManager.isServerManaged }
-    var isServerRunning: Bool { serverManager.isServerRunning }
+    var isServerRunning: Bool { serverManager.isServerRunning || serverManager.isConnected }
     
     func saveNodeSpacing() {
         persistenceService.saveNodeSpacing(nodeSpacing)

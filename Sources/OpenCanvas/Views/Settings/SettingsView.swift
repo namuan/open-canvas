@@ -43,9 +43,13 @@ struct ServerSettingsTab: View {
     var body: some View {
         Form {
             Section("Connection") {
-                TextField("http://localhost:4097", text: $viewModel.serverURL)
-                    .textFieldStyle(.roundedBorder)
-                
+                LabeledContent("Server URL") {
+                    Text(viewModel.serverURL)
+                        .foregroundStyle(.secondary)
+                        .font(.system(.body, design: .monospaced))
+                        .textSelection(.enabled)
+                }
+
                 HStack {
                     Text("Status")
                     Spacer()
@@ -77,15 +81,12 @@ struct ServerSettingsTab: View {
             Section("Server Management") {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(viewModel.isServerManaged ? "Managed by OpenCanvas" : "External (unmanaged)")
-                            .font(.subheadline)
-                        Text(viewModel.isServerManaged ? "opencode serve" : "Start OpenCanvas-managed server below")
-                            .font(.caption)
+                        Text(viewModel.managedServerPort.isEmpty ? "opencode serve" : "opencode serve --port \(viewModel.managedServerPort)")
+                            .font(.system(.caption, design: .monospaced))
                             .foregroundStyle(.secondary)
-                            .monospaced()
                     }
                     Spacer()
-                    if viewModel.isServerManaged && viewModel.isServerRunning {
+                    if viewModel.isServerRunning {
                         Button("Stop Server") {
                             viewModel.stopManagedServer()
                         }
@@ -94,8 +95,19 @@ struct ServerSettingsTab: View {
                         Button("Start Server") {
                             Task { await viewModel.startManagedServer() }
                         }
-                        .disabled(viewModel.isServerManaged)
                     }
+                }
+
+                LabeledContent("Port") {
+                    TextField("e.g. 53201", text: $viewModel.managedServerPort)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 120)
+                        .multilineTextAlignment(.trailing)
+                        .disabled(viewModel.isServerRunning)
+                        .foregroundStyle(viewModel.isServerRunning ? .secondary : .primary)
+                        .onChange(of: viewModel.managedServerPort) { _, _ in
+                            viewModel.applyPortChange()
+                        }
                 }
 
                 HStack {
@@ -117,10 +129,6 @@ struct ServerSettingsTab: View {
                         await viewModel.reconnect()
                     }
                 }
-                Button("Save") {
-                    viewModel.saveServerURL()
-                }
-                .buttonStyle(.borderedProminent)
             }
         }
         .formStyle(.grouped)
