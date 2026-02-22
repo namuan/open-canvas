@@ -16,6 +16,7 @@ final class SessionNodeViewModel {
     var streamingMessageID: String?
     var pendingPermission: PermissionRequestedData?
     var selectedModel: String? = SessionNodeViewModel.defaultModelID
+    var selectedDirectory: String? = nil
     
     private let serverManager = OpenCodeServerManager.shared
     private var cancellables = Set<AnyCancellable>()
@@ -55,16 +56,17 @@ final class SessionNodeViewModel {
         }
     }
     
-    func createSession() async {
+    func createSession(directory: String? = nil) async {
         status = .connecting
         errorMessage = nil
         
         do {
             let session = try await serverManager.createSession(model: selectedModel)
             sessionID = session.id
+            selectedDirectory = directory
             status = .idle
             
-            log(.info, category: .session, "Created session \(session.id) for node \(nodeID)")
+            log(.info, category: .session, "Created session \(session.id) for node \(nodeID) in directory: \(directory ?? "default")")
         } catch {
             status = .error
             errorMessage = error.localizedDescription
@@ -115,8 +117,8 @@ final class SessionNodeViewModel {
         streamingMessageID = assistantMessage.id
         
         do {
-            try await serverManager.sendPrompt(sessionID: sessionID, content: content, model: selectedModel)
-            log(.info, category: .session, "Sent prompt to session \(sessionID)")
+            try await serverManager.sendPrompt(sessionID: sessionID, content: content, model: selectedModel, directory: selectedDirectory)
+            log(.info, category: .session, "Sent prompt to session \(sessionID) with directory: \(selectedDirectory ?? "default")")
         } catch {
             status = .error
             errorMessage = error.localizedDescription

@@ -286,7 +286,7 @@ final class OpenCodeServerManager {
     }
     
     private func connectSSE() async {
-        guard let url = baseURL?.appendingPathComponent("event") else {
+        guard let url = baseURL?.appendingPathComponent("global/event") else {
             log(.error, category: .sse, "Invalid SSE URL")
             return
         }
@@ -333,17 +333,31 @@ final class OpenCodeServerManager {
             log(.error, category: .sse, "Failed to convert SSE data to UTF-8")
             return
         }
-        
-        // Parse just the type field
-        guard let json = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any],
-              let typeString = json["type"] as? String,
+
+        // /global/event wraps each event: {"directory":"...","payload":{...event...}}
+        // Extract the inner payload if present, otherwise treat as a bare event.
+        guard let outerJson = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
+            log(.error, category: .sse, "Failed to parse SSE JSON: \(data)")
+            return
+        }
+
+        let eventJson: [String: Any]
+        if let payload = outerJson["payload"] as? [String: Any] {
+            eventJson = payload
+        } else {
+            eventJson = outerJson
+        }
+
+        guard let eventJsonData = try? JSONSerialization.data(withJSONObject: eventJson),
+              let typeString = eventJson["type"] as? String,
               let eventType = SSEEventType(rawValue: typeString) else {
             log(.error, category: .sse, "Failed to parse SSE event type")
             log(.error, category: .sse, "Raw JSON that failed: \(data)")
             return
         }
-        
-        let event = SSEEvent(type: eventType, rawData: jsonData, jsonObject: json)
+
+
+        let event = SSEEvent(type: eventType, rawData: jsonData, jsonObject: eventJson)
         
         if eventType != .messagePartDelta, eventType != .messagePartUpdated, eventType != .serverHeartbeat {
             log(.debug, category: .sse, "Decoded SSE event: type=\(event.type)")
@@ -398,8 +412,17 @@ final class OpenCodeServerManager {
         log(.info, category: .session, "Renamed session \(id) to: \(title)")
     }
     
-    func sendPrompt(sessionID: String, content: String, model: String? = nil) async throws {
-        guard let url = baseURL?.appendingPathComponent("session/\(sessionID)/prompt_async") else {
+    func sendPrompt(sessionID: String, content: String, model: String? = nil, directory: String? = nil) async throws {
+        guard let baseURL,
+              var components = URLComponents(url: baseURL.appendingPathComponent("session/\(sessionID)/prompt_async"), resolvingAgainstBaseURL: false) else {
+            throw OpenCodeError.invalidURL
+        }
+        
+        if let directory {
+            components.queryItems = [URLQueryItem(name: "directory", value: directory)]
+        }
+        
+        guard let url = components.url else {
             throw OpenCodeError.invalidURL
         }
         

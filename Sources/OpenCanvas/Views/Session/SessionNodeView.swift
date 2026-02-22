@@ -4,6 +4,19 @@ import SwiftUI
 import AppKit
 #endif
 
+#if os(macOS)
+private func selectDirectory(prompt: String = "Select Directory", message: String = "Choose a working directory for this session") -> String? {
+    let panel = NSOpenPanel()
+    panel.canChooseDirectories = true
+    panel.canChooseFiles = false
+    panel.allowsMultipleSelection = false
+    panel.prompt = prompt
+    panel.message = message
+    panel.directoryURL = URL(fileURLWithPath: NSHomeDirectory())
+    return panel.runModal() == .OK ? panel.url?.path : nil
+}
+#endif
+
 struct SessionNodeView: View {
     @Environment(AppState.self) private var appState
     @State private var viewModel: SessionNodeViewModel
@@ -144,6 +157,14 @@ struct SessionNodeView: View {
                             },
                             onFocus: {
                                 appState.clearSelection()
+                            },
+                            selectedDirectory: viewModel.selectedDirectory,
+                            onChangeDirectory: {
+                                #if os(macOS)
+                                if let dir = selectDirectory(prompt: "Change Directory", message: "Choose a working directory for messages in this session") {
+                                    viewModel.selectedDirectory = dir
+                                }
+                                #endif
                             }
                         )
                     }
@@ -200,9 +221,13 @@ struct SessionNodeView: View {
                 .foregroundStyle(.secondary)
             
             Button {
-                Task {
-                    await viewModel.createSession()
+                #if os(macOS)
+                if let directory = selectDirectory() {
+                    Task { await viewModel.createSession(directory: directory) }
                 }
+                #else
+                Task { await viewModel.createSession() }
+                #endif
             } label: {
                 Label("Create Session", systemImage: "plus.circle.fill")
                     .padding(.horizontal, 18)
@@ -319,9 +344,13 @@ struct SessionNodeView: View {
     @ViewBuilder
     private var nodeContextMenu: some View {
         Button {
-            Task {
-                await viewModel.createSession()
+            #if os(macOS)
+            if let directory = selectDirectory() {
+                Task { await viewModel.createSession(directory: directory) }
             }
+            #else
+            Task { await viewModel.createSession() }
+            #endif
         } label: {
             if viewModel.sessionID == nil {
                 Label("Create Session", systemImage: "plus.circle")
