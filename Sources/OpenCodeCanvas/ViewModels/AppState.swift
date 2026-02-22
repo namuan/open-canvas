@@ -24,6 +24,8 @@ final class AppState {
     private let persistenceService = PersistenceService.shared
     private var cancellables = Set<AnyCancellable>()
     private var lastActivityUpdateBySessionID: [String: Date] = [:]
+    private var scaleSaveTask: Task<Void, Never>?
+    private var offsetSaveTask: Task<Void, Never>?
     
     var activeSessionCount: Int {
         nodes.filter { $0.sessionID != nil }.count
@@ -437,8 +439,8 @@ final class AppState {
         if nodes.isEmpty {
             canvasScale = 1.0
             canvasOffset = .zero
-            persistenceService.saveCanvasOffset(canvasOffset)
-            persistenceService.saveCanvasScale(canvasScale)
+            persistenceService.saveCanvasOffset(.zero)
+            persistenceService.saveCanvasScale(1.0)
             log(.info, category: .canvas, "Reset canvas view (no nodes)")
             return
         }
@@ -449,23 +451,31 @@ final class AppState {
     }
     
     func zoomIn() {
-        canvasScale = min(2.5, canvasScale * 1.2)
-        persistenceService.saveCanvasScale(canvasScale)
+        updateCanvasScale(min(2.5, canvasScale * 1.2))
     }
     
     func zoomOut() {
-        canvasScale = max(0.3, canvasScale / 1.2)
-        persistenceService.saveCanvasScale(canvasScale)
+        updateCanvasScale(max(0.3, canvasScale / 1.2))
     }
     
     func updateCanvasOffset(_ offset: CGSize) {
         canvasOffset = offset
-        persistenceService.saveCanvasOffset(offset)
+        offsetSaveTask?.cancel()
+        offsetSaveTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled, let self else { return }
+            self.persistenceService.saveCanvasOffset(offset)
+        }
     }
     
     func updateCanvasScale(_ scale: CGFloat) {
         canvasScale = scale
-        persistenceService.saveCanvasScale(scale)
+        scaleSaveTask?.cancel()
+        scaleSaveTask = Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(300))
+            guard !Task.isCancelled, let self else { return }
+            self.persistenceService.saveCanvasScale(scale)
+        }
     }
 
     func updateCanvasViewportSize(_ size: CGSize) {

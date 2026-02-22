@@ -33,7 +33,12 @@ echo ""
 
 cd "$SCRIPT_DIR"
 
-echo "[1/5] Building with Swift Package Manager..."
+echo "[1/6] Cleaning previous build artifacts..."
+swift package clean 2>&1 | while read -r line; do
+    echo "  $line"
+done
+
+echo "[2/6] Building with Swift Package Manager..."
 swift build -c release 2>&1 | while read -r line; do
     echo "  $line"
 done
@@ -44,7 +49,7 @@ if [ ! -f ".build/release/$APP_NAME" ]; then
 fi
 
 echo ""
-echo "[2/5] Creating application bundle..."
+echo "[3/6] Creating application bundle..."
 
 # Remove old bundle if exists
 rm -rf "$APP_BUNDLE"
@@ -97,7 +102,7 @@ EOF
 # Create PkgInfo
 echo -n "APPL????" > "$APP_BUNDLE/Contents/PkgInfo"
 
-echo "[3/5] Generating application icon..."
+echo "[4/6] Generating application icon..."
 
 if [ ! -f "$ICON_SOURCE" ]; then
     echo "Error: Icon source not found at $ICON_SOURCE"
@@ -138,7 +143,7 @@ done
 iconutil -c icns "$ICONSET_DIR" -o "$ICNS_FILE"
 rm -rf "$ICONSET_DIR"
 
-echo "[4/5] Installing to $DEST_DIR..."
+echo "[5/6] Installing to $DEST_DIR..."
 
 
 # Create ~/Applications if it doesn't exist
@@ -150,7 +155,7 @@ rm -rf "$DEST_DIR/$APP_BUNDLE"
 # Copy to Applications
 cp -R "$APP_BUNDLE" "$DEST_DIR/"
 
-echo "[5/5] Cleaning up..."
+echo "[6/6] Cleaning up..."
 rm -rf "$APP_BUNDLE"
 
 echo ""

@@ -48,10 +48,6 @@ struct CanvasView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .contentShape(Rectangle())
-            .overlay(alignment: .bottomTrailing) {
-                canvasScaleControl
-                    .padding(18)
-            }
             #if os(macOS)
             .overlay {
                 TrackpadScrollCaptureView { delta in
@@ -100,34 +96,6 @@ struct CanvasView: View {
         } message: {
             Text("This will remove all session nodes. This action cannot be undone.")
         }
-    }
-    
-    private var canvasScaleControl: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                Text("Zoom")
-                Spacer(minLength: 12)
-                Text("\(Int(appState.canvasScale * 100))%")
-                    .font(.system(size: 11, design: .monospaced))
-            }
-            .font(.system(size: 12, weight: .medium))
-            
-            Slider(
-                value: Binding(
-                    get: { appState.canvasScale },
-                    set: { appState.updateCanvasScale($0) }
-                ),
-                in: 0.3...2.5
-            )
-            .frame(width: 170)
-        }
-        .padding(12)
-        .background(Color(nsColor: .windowBackgroundColor), in: .rect(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
-        )
     }
     
     private var canvasDragGesture: some Gesture {
