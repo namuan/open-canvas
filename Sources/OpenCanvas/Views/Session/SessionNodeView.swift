@@ -29,7 +29,12 @@ struct SessionNodeView: View {
         .background(nodeCardBackground)
         .overlay {
             RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
-                .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 2 : 1)
+                .fill(appState.isNodeSelected(node.id) ? Color.accentColor.opacity(0.08) : Color.clear)
+                .animation(.easeInOut(duration: 0.15), value: appState.isNodeSelected(node.id))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: node.isMinimized ? 8 : 10, style: .continuous)
+                .stroke(selectionStroke, lineWidth: appState.isNodeSelected(node.id) ? 3 : 1)
                 .animation(.easeInOut(duration: 0.15), value: appState.isNodeSelected(node.id))
         }
         .clipShape(.rect(cornerRadius: node.isMinimized ? 8 : 10))
@@ -63,7 +68,7 @@ struct SessionNodeView: View {
     }
     
     private var selectionStroke: Color {
-        appState.isNodeSelected(node.id) ? .accentColor : .ocBorder
+        appState.isNodeSelected(node.id) ? .accentColor : Color.ocBorder.opacity(0.6)
     }
     
     private var expandedView: some View {
@@ -253,7 +258,10 @@ struct SessionNodeView: View {
             .onChanged { value in
                 guard !appState.isNodeMaximized(node.id) else { return }
                 isDragging = true
-                dragOffset = value.translation
+                dragOffset = CGSize(
+                    width: value.translation.width / appState.canvasScale,
+                    height: value.translation.height / appState.canvasScale
+                )
             }
             .onEnded { value in
                 guard !appState.isNodeMaximized(node.id) else { return }

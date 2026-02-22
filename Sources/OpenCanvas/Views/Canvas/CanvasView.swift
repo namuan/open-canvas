@@ -10,6 +10,7 @@ struct CanvasView: View {
     @State private var isMarqueeSelecting = false
     @State private var marqueeStartPoint: CGPoint?
     @State private var marqueeCurrentPoint: CGPoint?
+    @State private var canvasViewSize: CGSize = .zero
     @State private var showingSettings = false
     @State private var showingClearConfirmation = false
     
@@ -22,15 +23,18 @@ struct CanvasView: View {
                 )
                 
                 ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
+                    let baseWidth = node.isMinimized ? 280.0 : node.size.width
+                    let baseHeight = node.isMinimized ? 72.0 : node.size.height
                     SessionNodeView(node: node)
+                        .frame(width: baseWidth, height: baseHeight)
+                        .scaleEffect(appState.canvasScale, anchor: .center)
+                        .frame(
+                            width: baseWidth * appState.canvasScale,
+                            height: baseHeight * appState.canvasScale
+                        )
                         .position(
                             x: node.position.x * appState.canvasScale + appState.canvasOffset.width + geometry.size.width / 2,
                             y: node.position.y * appState.canvasScale + appState.canvasOffset.height + geometry.size.height / 2
-                        )
-                        .scaleEffect(appState.canvasScale, anchor: .center)
-                        .frame(
-                            width: node.isMinimized ? 280 : node.size.width,
-                            height: node.isMinimized ? 72 : node.size.height
                         )
                         .zIndex(zIndexForNode(node, index: index))
                 }
@@ -62,9 +66,11 @@ struct CanvasView: View {
                 appState.clearSelection()
             }
             .onAppear {
+                canvasViewSize = geometry.size
                 appState.updateCanvasViewportSize(geometry.size)
             }
             .onChange(of: geometry.size) { _, newSize in
+                canvasViewSize = newSize
                 appState.updateCanvasViewportSize(newSize)
             }
         }
@@ -214,33 +220,31 @@ struct CanvasView: View {
             return
         }
 
-        let worldRect = worldRect(fromViewRect: rectInView)
-        let selectedIDs = Set(
-            appState.nodes
-                .filter { nodeWorldRect($0).intersects(worldRect) }
-                .map(\.id)
-        )
+        guard canvasViewSize.width > 0, canvasViewSize.height > 0 else {
+            appState.clearSelection()
+            return
+        }
+
+        var selectedIDs = Set<UUID>()
+        for node in appState.nodes {
+            let nodeRect = nodeViewRect(node, in: canvasViewSize)
+            if nodeRect.intersects(rectInView) {
+                selectedIDs.insert(node.id)
+            }
+        }
         appState.selectNodes(selectedIDs)
     }
 
-    private func worldRect(fromViewRect rect: CGRect) -> CGRect {
-        let topLeft = CGPoint(
-            x: (rect.minX - appState.canvasOffset.width - appState.canvasViewportSize.width / 2) / appState.canvasScale,
-            y: (rect.minY - appState.canvasOffset.height - appState.canvasViewportSize.height / 2) / appState.canvasScale
+    private func nodeViewRect(_ node: CanvasNode, in viewportSize: CGSize) -> CGRect {
+        let width = (node.isMinimized ? 280 : node.size.width) * appState.canvasScale
+        let height = (node.isMinimized ? 72 : node.size.height) * appState.canvasScale
+        let center = CGPoint(
+            x: node.position.x * appState.canvasScale + appState.canvasOffset.width + viewportSize.width / 2,
+            y: node.position.y * appState.canvasScale + appState.canvasOffset.height + viewportSize.height / 2
         )
-        let bottomRight = CGPoint(
-            x: (rect.maxX - appState.canvasOffset.width - appState.canvasViewportSize.width / 2) / appState.canvasScale,
-            y: (rect.maxY - appState.canvasOffset.height - appState.canvasViewportSize.height / 2) / appState.canvasScale
-        )
-        return normalizedRect(from: topLeft, to: bottomRight)
-    }
-
-    private func nodeWorldRect(_ node: CanvasNode) -> CGRect {
-        let width = node.isMinimized ? 280 : node.size.width
-        let height = node.isMinimized ? 72 : node.size.height
         return CGRect(
-            x: node.position.x - width / 2,
-            y: node.position.y - height / 2,
+            x: center.x - width / 2,
+            y: center.y - height / 2,
             width: width,
             height: height
         )
@@ -262,4 +266,5 @@ struct CanvasView: View {
         false
         #endif
     }
+
 }
