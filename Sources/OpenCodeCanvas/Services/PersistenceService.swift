@@ -17,7 +17,6 @@ final class PersistenceService {
         static let logLevel = "logLevel"
         static let canvasOffset = "canvasOffset"
         static let canvasScale = "canvasScale"
-        static let nodeConnections = "nodeConnections"
         static let nodeSpacing = "nodeSpacing"
     }
     
@@ -76,41 +75,6 @@ final class PersistenceService {
         
         log(.debug, category: .storage, "Loaded \(nodes.count) nodes")
         return nodes
-    }
-    
-    func saveConnections(_ connections: [NodeConnection]) {
-        let connectionDicts = connections.map { conn -> [String: Any] in
-            return [
-                "id": conn.id.uuidString,
-                "sourceNodeID": conn.sourceNodeID.uuidString,
-                "targetNodeID": conn.targetNodeID.uuidString
-            ]
-        }
-        
-        defaults.set(connectionDicts, forKey: Keys.nodeConnections)
-        log(.debug, category: .storage, "Saved \(connections.count) connections")
-    }
-    
-    func loadConnections() -> [NodeConnection] {
-        guard let connectionDicts = defaults.array(forKey: Keys.nodeConnections) as? [[String: Any]] else {
-            return []
-        }
-        
-        let connections = connectionDicts.compactMap { dict -> NodeConnection? in
-            guard let idString = dict["id"] as? String,
-                  let id = UUID(uuidString: idString),
-                  let sourceIDString = dict["sourceNodeID"] as? String,
-                  let sourceNodeID = UUID(uuidString: sourceIDString),
-                  let targetIDString = dict["targetNodeID"] as? String,
-                  let targetNodeID = UUID(uuidString: targetIDString) else {
-                return nil
-            }
-            
-            return NodeConnection(id: id, sourceNodeID: sourceNodeID, targetNodeID: targetNodeID)
-        }
-        
-        log(.debug, category: .storage, "Loaded \(connections.count) connections")
-        return connections
     }
     
     func saveServerURL(_ url: String) {

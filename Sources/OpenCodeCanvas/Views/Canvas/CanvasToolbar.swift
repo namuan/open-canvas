@@ -3,7 +3,6 @@ import SwiftUI
 struct CanvasToolbar: ToolbarContent {
     @Environment(AppState.self) private var appState
     @Binding var showingSettings: Bool
-    @Binding var showingClearConfirmation: Bool
     
     var body: some ToolbarContent {
         ToolbarItemGroup {
@@ -48,20 +47,6 @@ struct CanvasToolbar: ToolbarContent {
                 Label("Reset View", systemImage: "arrow.counterclockwise")
             }
             .help("Reset view (⌘0)")
-            
-            Divider()
-            
-            Button {
-                appState.isConnectionMode.toggle()
-            } label: {
-                if appState.isConnectionMode {
-                    Label("Connection Mode", systemImage: "line.diagonal")
-                        .foregroundStyle(.blue)
-                } else {
-                    Label("Connection Mode", systemImage: "line.diagonal")
-                }
-            }
-            .help("Toggle connection mode")
             
             Divider()
             

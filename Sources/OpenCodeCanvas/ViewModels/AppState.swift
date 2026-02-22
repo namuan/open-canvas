@@ -6,7 +6,6 @@ import Combine
 @Observable
 final class AppState {
     var nodes: [CanvasNode] = []
-    var connections: [NodeConnection] = []
     var selectedNodeID: UUID?
     var selectedNodeIDs: Set<UUID> = []
     var canvasOffset: CGSize = .zero
@@ -16,8 +15,6 @@ final class AppState {
     var canvasBackgroundStyle: CanvasBackgroundStyle = .dots
     var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
-    var isConnectionMode: Bool = false
-    var connectionSourceNodeID: UUID?
     private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
     
     private let serverManager = OpenCodeServerManager.shared
@@ -67,7 +64,6 @@ final class AppState {
     
     private func loadPersistedState() {
         nodes = persistenceService.loadNodes()
-        connections = persistenceService.loadConnections()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
         // Always start with sidebar closed on app launch.
@@ -226,7 +222,6 @@ final class AppState {
             }
         }
         
-        connections.removeAll { $0.sourceNodeID == id || $0.targetNodeID == id }
         nodes.remove(at: index)
         
         if selectedNodeID == id {
@@ -239,7 +234,6 @@ final class AppState {
         }
         
         saveNodes()
-        saveConnections()
         
         log(.info, category: .canvas, "Removed node \(id)")
     }
@@ -359,27 +353,6 @@ final class AppState {
         saveNodes()
         
         log(.info, category: .session, "Cleared session from node \(nodeID)")
-    }
-    
-    func addConnection(sourceID: UUID, targetID: UUID) {
-        let exists = connections.contains { 
-            $0.sourceNodeID == sourceID && $0.targetNodeID == targetID 
-        }
-        
-        if !exists && sourceID != targetID {
-            let connection = NodeConnection(sourceNodeID: sourceID, targetNodeID: targetID)
-            connections.append(connection)
-            saveConnections()
-            
-            log(.info, category: .canvas, "Added connection from \(sourceID) to \(targetID)")
-        }
-    }
-    
-    func removeConnection(id: UUID) {
-        connections.removeAll { $0.id == id }
-        saveConnections()
-        
-        log(.info, category: .canvas, "Removed connection \(id)")
     }
     
     func autoLayout() {
@@ -525,11 +498,9 @@ final class AppState {
         }
         
         nodes.removeAll()
-        connections.removeAll()
         clearSelection()
         
         saveNodes()
-        saveConnections()
         
         log(.info, category: .canvas, "Cleared canvas")
     }
@@ -677,9 +648,6 @@ final class AppState {
         persistenceService.saveNodes(nodes)
     }
     
-    private func saveConnections() {
-        persistenceService.saveConnections(connections)
-    }
 }
 
 private struct NodeFrameSnapshot {

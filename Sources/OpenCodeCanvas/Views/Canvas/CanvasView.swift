@@ -21,13 +21,6 @@ struct CanvasView: View {
                     scale: appState.canvasScale
                 )
                 
-                ConnectionOverlay(
-                    connections: appState.connections,
-                    nodes: appState.nodes,
-                    scale: appState.canvasScale,
-                    offset: appState.canvasOffset
-                )
-                
                 ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
                     SessionNodeView(node: node)
                         .position(
@@ -77,8 +70,7 @@ struct CanvasView: View {
         }
         .toolbar {
             CanvasToolbar(
-                showingSettings: $showingSettings,
-                showingClearConfirmation: $showingClearConfirmation
+                showingSettings: $showingSettings
             )
         }
         .sheet(isPresented: $showingSettings) {
