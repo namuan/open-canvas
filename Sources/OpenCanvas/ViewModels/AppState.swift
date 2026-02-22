@@ -267,6 +267,15 @@ final class AppState {
         }
     }
 
+    func updateNodeSizeLive(id: UUID, size: CGSize) {
+        guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
+        let minSize = CGSize(width: 280, height: 360)
+        nodes[index].size = CGSize(
+            width: max(minSize.width, size.width),
+            height: max(minSize.height, size.height)
+        )
+    }
+
     func isNodeMaximized(_ id: UUID) -> Bool {
         maximizedNodeSnapshots[id] != nil
     }
