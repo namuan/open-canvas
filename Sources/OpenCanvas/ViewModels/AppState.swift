@@ -382,6 +382,15 @@ final class AppState {
         
         log(.info, category: .session, "Cleared session from node \(nodeID)")
     }
+
+    func updateNodeDirectory(id: UUID, directory: String?) {
+        guard let index = nodes.firstIndex(where: { $0.id == id }) else { return }
+
+        nodes[index].directory = directory
+        saveNodes()
+
+        log(.info, category: .session, "Updated directory for node \(id): \(directory ?? "none")")
+    }
     
     func autoLayout() {
         let targetIDs = effectiveSelectedNodeIDs

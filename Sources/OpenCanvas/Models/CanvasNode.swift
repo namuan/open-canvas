@@ -10,6 +10,7 @@ struct CanvasNode: Identifiable, Codable, Equatable, Sendable {
     var isMinimized: Bool
     var size: CGSize
     var lastActivity: Date?
+    var directory: String?
     
     init(
         id: UUID = UUID(),
@@ -19,7 +20,8 @@ struct CanvasNode: Identifiable, Codable, Equatable, Sendable {
         color: NodeColor = .blue,
         isMinimized: Bool = false,
         size: CGSize = CGSize(width: 320, height: 480),
-        lastActivity: Date? = nil
+        lastActivity: Date? = nil,
+        directory: String? = nil
     ) {
         self.id = id
         self.title = title
@@ -29,6 +31,7 @@ struct CanvasNode: Identifiable, Codable, Equatable, Sendable {
         self.isMinimized = isMinimized
         self.size = size
         self.lastActivity = lastActivity
+        self.directory = directory
     }
     
     static func == (lhs: CanvasNode, rhs: CanvasNode) -> Bool {
@@ -38,6 +41,7 @@ struct CanvasNode: Identifiable, Codable, Equatable, Sendable {
         lhs.sessionID == rhs.sessionID &&
         lhs.color == rhs.color &&
         lhs.isMinimized == rhs.isMinimized &&
-        lhs.size == rhs.size
+        lhs.size == rhs.size &&
+        lhs.directory == rhs.directory
     }
 }

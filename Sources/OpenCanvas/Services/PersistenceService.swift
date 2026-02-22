@@ -35,7 +35,8 @@ final class PersistenceService {
                 "color": node.color.rawValue,
                 "minimized": node.isMinimized,
                 "width": node.size.width,
-                "height": node.size.height
+                "height": node.size.height,
+                "directory": node.directory ?? ""
             ]
         }
         
@@ -63,6 +64,7 @@ final class PersistenceService {
             let minimized = dict["minimized"] as? Bool ?? false
             let width = dict["width"] as? CGFloat ?? 320
             let height = dict["height"] as? CGFloat ?? 480
+            let directory = dict["directory"] as? String
             
             return CanvasNode(
                 id: id,
@@ -71,7 +73,8 @@ final class PersistenceService {
                 sessionID: sessionID?.isEmpty == false ? sessionID : nil,
                 color: color,
                 isMinimized: minimized,
-                size: CGSize(width: width, height: height)
+                size: CGSize(width: width, height: height),
+                directory: directory?.isEmpty == false ? directory : nil
             )
         }
         

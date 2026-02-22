@@ -73,14 +73,23 @@ struct SessionNodeView: View {
         }
         .onAppear {
             viewModel.configure(with: node.sessionID)
+            viewModel.selectedDirectory = node.directory
         }
         .onChange(of: node.sessionID) { _, newSessionID in
             viewModel.configure(with: newSessionID)
+        }
+        .onChange(of: node.directory) { _, newDirectory in
+            if viewModel.selectedDirectory != newDirectory {
+                viewModel.selectedDirectory = newDirectory
+            }
         }
         .onChange(of: viewModel.sessionID) { _, newSessionID in
             if let sessionID = newSessionID {
                 appState.assignSession(nodeID: node.id, sessionID: sessionID)
             }
+        }
+        .onChange(of: viewModel.selectedDirectory) { _, newDirectory in
+            appState.updateNodeDirectory(id: node.id, directory: newDirectory)
         }
     }
     
