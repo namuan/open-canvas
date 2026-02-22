@@ -104,17 +104,6 @@ struct AppearanceSettingsTab: View {
         Form {
             Section("Nodes") {
                 HStack {
-                    Text("Default Color")
-                    Spacer()
-                    NodeColorPicker(
-                        selectedColor: $viewModel.defaultNodeColor,
-                        onColorSelected: { _ in
-                            viewModel.saveDefaultNodeColor()
-                        }
-                    )
-                }
-
-                HStack {
                     Text("New Node Gap")
                     Spacer()
                     Text("\(Int(viewModel.nodeSpacing)) pt")

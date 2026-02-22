@@ -13,7 +13,6 @@ final class AppState {
     var canvasViewportSize: CGSize = .zero
     var isHoveringOverSessionNode: Bool = false
     var isHoveringOverSettings: Bool = false
-    var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var normalFontSize: CGFloat = 13
     var expandedFontSize: CGFloat = 16
@@ -68,7 +67,6 @@ final class AppState {
         nodes = persistenceService.loadNodes()
         canvasOffset = persistenceService.loadCanvasOffset()
         canvasScale = persistenceService.loadCanvasScale()
-        defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
         normalFontSize = persistenceService.loadNormalFontSize()
         expandedFontSize = persistenceService.loadExpandedFontSize()
@@ -194,7 +192,7 @@ final class AppState {
         let node = CanvasNode(
             title: "Session \(nodes.count + 1)",
             position: nodePosition,
-            color: defaultNodeColor
+            color: .blue
         )
         
         nodes.append(node)
@@ -463,11 +461,6 @@ final class AppState {
         canvasViewportSize = size
     }
     
-    func updateDefaultNodeColor(_ color: NodeColor) {
-        defaultNodeColor = color
-        persistenceService.saveDefaultNodeColor(color)
-    }
-
     func updateNodeSpacing(_ spacing: CGFloat) {
         let clamped = min(160, max(0, spacing))
         nodeSpacing = clamped

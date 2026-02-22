@@ -5,7 +5,6 @@ import SwiftUI
 @Observable
 final class SettingsViewModel {
     var serverURL: String = "http://localhost:4096"
-    var defaultNodeColor: NodeColor = .blue
     var nodeSpacing: CGFloat = 40
     var logLevel: LogLevel = .info
     var normalFontSize: CGFloat = 13
@@ -16,7 +15,6 @@ final class SettingsViewModel {
     
     func loadSettings() {
         serverURL = persistenceService.loadServerURL()
-        defaultNodeColor = persistenceService.loadDefaultNodeColor()
         nodeSpacing = persistenceService.loadNodeSpacing()
         logLevel = persistenceService.loadLogLevel()
         normalFontSize = persistenceService.loadNormalFontSize()
@@ -28,10 +26,6 @@ final class SettingsViewModel {
         serverManager.configure(url: serverURL)
     }
     
-    func saveDefaultNodeColor() {
-        persistenceService.saveDefaultNodeColor(defaultNodeColor)
-    }
-
     func saveNodeSpacing() {
         persistenceService.saveNodeSpacing(nodeSpacing)
     }
