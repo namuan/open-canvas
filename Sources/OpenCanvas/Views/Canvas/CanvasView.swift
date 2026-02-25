@@ -12,6 +12,7 @@ struct CanvasView: View {
     @State private var marqueeCurrentPoint: CGPoint?
     @State private var canvasViewSize: CGSize = .zero
     @State private var zoomStartScale: CGFloat?
+    @State private var isZooming = false
     @State private var showingSettings = false
     @State private var showingClearConfirmation = false
     @State private var resizingNodeID: UUID? = nil
@@ -23,19 +24,28 @@ struct CanvasView: View {
             ZStack {
                 Color(nsColor: .windowBackgroundColor)
                 
-                ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
-                    let baseWidth = node.isMinimized ? 280.0 : node.size.width
-                    let baseHeight = node.isMinimized ? 72.0 : node.size.height
-                    SessionNodeView(node: node)
-                        .frame(width: baseWidth, height: baseHeight)
-                        .scaleEffect(appState.canvasScale)
-                        .frame(width: baseWidth * appState.canvasScale, height: baseHeight * appState.canvasScale)
-                        .position(
-                            x: node.position.x * appState.canvasScale + appState.canvasOffset.width + geometry.size.width / 2,
-                            y: node.position.y * appState.canvasScale + appState.canvasOffset.height + geometry.size.height / 2
-                        )
-                        .zIndex(zIndexForNode(node, index: index))
+                let viewportCenter = CGPoint(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height / 2
+                )
+
+                ZStack {
+                    ForEach(Array(appState.nodes.enumerated()), id: \.element.id) { index, node in
+                        let baseWidth = node.isMinimized ? 280.0 : node.size.width
+                        let baseHeight = node.isMinimized ? 72.0 : node.size.height
+                        SessionNodeView(node: node)
+                            .frame(width: baseWidth, height: baseHeight)
+                            .position(
+                                x: node.position.x + viewportCenter.x,
+                                y: node.position.y + viewportCenter.y
+                            )
+                            .zIndex(zIndexForNode(node, index: index))
+                    }
                 }
+                .frame(width: geometry.size.width, height: geometry.size.height)
+                .scaleEffect(appState.canvasScale, anchor: .center)
+                .offset(x: appState.canvasOffset.width, y: appState.canvasOffset.height)
+                .allowsHitTesting(!isZooming)
 
                 // Resize handles — rendered as siblings above nodes to avoid gesture conflicts
                 ForEach(appState.nodes) { node in
@@ -60,7 +70,13 @@ struct CanvasView: View {
                                 height: appState.canvasOffset.height + delta.height
                             )
                             appState.updateCanvasOffset(newOffset)
-                        }, isBlocked: showingSettings || showingClearConfirmation || appState.isHoveringOverSessionNode || appState.isHoveringOverSettings)
+                        }, isBlocked:
+                            showingSettings ||
+                            showingClearConfirmation ||
+                            isZooming ||
+                            appState.isHoveringOverSessionNode ||
+                            appState.isHoveringOverSettings
+                        )
                         .allowsHitTesting(false)
             }
             #endif
@@ -146,6 +162,9 @@ struct CanvasView: View {
                 if zoomStartScale == nil {
                     zoomStartScale = appState.canvasScale
                 }
+                if !isZooming {
+                    isZooming = true
+                }
 
                 let baseline = zoomStartScale ?? appState.canvasScale
                 let newScale = min(2.5, max(0.3, baseline * scale))
@@ -153,6 +172,7 @@ struct CanvasView: View {
             }
             .onEnded { _ in
                 zoomStartScale = nil
+                isZooming = false
             }
     }
     
