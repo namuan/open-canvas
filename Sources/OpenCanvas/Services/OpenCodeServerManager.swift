@@ -385,6 +385,16 @@ final class OpenCodeServerManager {
         return sessions
     }
     
+    func getProviders() async throws -> OCProvidersResponse {
+        guard let url = baseURL?.appendingPathComponent("config/providers") else {
+            throw OpenCodeError.invalidURL
+        }
+        
+        let providers: OCProvidersResponse = try await get(url)
+        log(.debug, category: .network, "Fetched \(providers.providers.count) providers")
+        return providers
+    }
+    
     func getSession(id: String) async throws -> OCSession {
         guard let url = baseURL?.appendingPathComponent("session/\(id)") else {
             throw OpenCodeError.invalidURL

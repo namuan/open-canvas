@@ -3,7 +3,11 @@ import SwiftUI
 struct NodeTitleBar: View {
     let title: String
     let sessionID: String?
+    let selectedModel: String?
+    let availableModels: [OCModel]
+    let isLoadingModels: Bool
     let onTitleChange: (String) -> Void
+    let onModelChange: (String?) -> Void
     let onMinimize: () -> Void
     let onToggleExpand: () -> Void
     let onClose: () -> Void
@@ -77,6 +81,16 @@ struct NodeTitleBar: View {
                 .help("Copy: opencode -s \(sessionID)")
                 .animation(.easeInOut(duration: 0.2), value: sessionIDCopied)
             }
+            
+            ModelSelector(
+                selectedModel: Binding(
+                    get: { selectedModel },
+                    set: { onModelChange($0) }
+                ),
+                availableModels: availableModels,
+                isLoading: isLoadingModels,
+                fontSize: sessionFontSize
+            )
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)

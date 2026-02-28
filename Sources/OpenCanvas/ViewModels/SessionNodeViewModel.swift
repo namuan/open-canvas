@@ -17,6 +17,8 @@ final class SessionNodeViewModel {
     var pendingPermission: PermissionRequestedData?
     var selectedModel: String? = SessionNodeViewModel.defaultModelID
     var selectedDirectory: String? = nil
+    var availableModels: [OCModel] = []
+    var isLoadingModels: Bool = false
     
     private let serverManager = OpenCodeServerManager.shared
     private var cancellables = Set<AnyCancellable>()
@@ -53,6 +55,39 @@ final class SessionNodeViewModel {
         } else {
             status = .disconnected
             messages.removeAll()
+        }
+        
+        Task {
+            await loadModels()
+        }
+    }
+    
+    func loadModels() async {
+        isLoadingModels = true
+        defer { isLoadingModels = false }
+        
+        do {
+            let response = try await serverManager.getProviders()
+            log(.debug, category: .session, "Providers response: \(response.providers.count) providers")
+            
+            var allModels: [OCModel] = []
+            for provider in response.providers {
+                log(.debug, category: .session, "Provider \(provider.id) (\(provider.name)): \(provider.models.count) models")
+                for (modelKey, model) in provider.models {
+                    log(.debug, category: .session, "  Model key=\(modelKey), id=\(model.id), name=\(model.name), providerID=\(model.providerID)")
+                    allModels.append(OCModel(
+                        id: model.id,
+                        providerID: provider.id,
+                        name: model.name,
+                        family: model.family
+                    ))
+                }
+            }
+            
+            availableModels = allModels
+            log(.debug, category: .session, "Loaded \(availableModels.count) models total")
+        } catch {
+            log(.error, category: .session, "Failed to load models: \(error.localizedDescription)")
         }
     }
     

@@ -106,8 +106,14 @@ struct SessionNodeView: View {
             NodeTitleBar(
                 title: node.title,
                 sessionID: viewModel.sessionID,
+                selectedModel: viewModel.selectedModel,
+                availableModels: viewModel.availableModels,
+                isLoadingModels: viewModel.isLoadingModels,
                 onTitleChange: { newTitle in
                     appState.updateNodeTitle(id: node.id, title: newTitle)
+                },
+                onModelChange: { newModel in
+                    viewModel.selectedModel = newModel
                 },
                 onMinimize: {
                     withAnimation(.spring(response: 0.34, dampingFraction: 0.72)) {

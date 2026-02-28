@@ -100,6 +100,42 @@ struct OCPromptModel: Codable, Sendable {
         providerID = provider
         modelID = model
     }
+    
+    var displayName: String {
+        "\(providerID)/\(modelID)"
+    }
+}
+
+struct OCModel: Codable, Sendable, Identifiable {
+    let id: String
+    let providerID: String
+    let name: String
+    let family: String?
+    
+    var displayName: String {
+        name.isEmpty ? id : name
+    }
+    
+    var fullID: String {
+        "\(providerID)/\(id)"
+    }
+}
+
+struct OCProvider: Codable, Sendable, Identifiable {
+    let id: String
+    let name: String
+    let source: String
+    let models: [String: OCModel]
+}
+
+struct OCProvidersResponse: Codable, Sendable {
+    let providers: [OCProvider]
+    let defaultModel: [String: String]
+    
+    enum CodingKeys: String, CodingKey {
+        case providers
+        case defaultModel = "default"
+    }
 }
 
 struct OCForkRequest: Codable, Sendable {
