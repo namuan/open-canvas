@@ -9,6 +9,10 @@ struct ModelSelector: View {
     @State private var isExpanded = false
     @State private var searchText = ""
     
+    private var groupedModels: [String: [OCModel]] {
+        Dictionary(grouping: filteredModels, by: { $0.providerID })
+    }
+    
     private var filteredModels: [OCModel] {
         if searchText.isEmpty {
             return availableModels
@@ -18,6 +22,10 @@ struct ModelSelector: View {
             model.providerID.localizedCaseInsensitiveContains(searchText) ||
             model.id.localizedCaseInsensitiveContains(searchText)
         }
+    }
+    
+    private var sortedProviders: [String] {
+        groupedModels.keys.sorted()
     }
     
     private var selectedModelDisplayName: String {
@@ -41,29 +49,33 @@ struct ModelSelector: View {
                 Text("No models available")
                     .foregroundStyle(.secondary)
             } else {
-                Section {
-                    ForEach(filteredModels) { model in
-                        Button {
-                            selectedModel = model.fullID
-                            isExpanded = false
-                        } label: {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                ForEach(sortedProviders, id: \.self) { provider in
+                    Section {
+                        ForEach(groupedModels[provider] ?? []) { model in
+                            Button {
+                                selectedModel = model.fullID
+                                isExpanded = false
+                            } label: {
+                                HStack {
                                     Text(model.displayName)
                                         .font(.system(size: 12))
-                                    Text(model.providerID)
-                                        .font(.system(size: 10))
-                                        .foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if model.fullID == selectedModel {
-                                    Image(systemName: "checkmark")
+                                    Spacer()
+                                    if model.fullID == selectedModel {
+                                        Image(systemName: "checkmark")
+                                    }
                                 }
                             }
                         }
+                    } header: {
+                        HStack {
+                            Text(provider)
+                                .font(.system(size: 10, weight: .semibold))
+                            Spacer()
+                            Text("\(groupedModels[provider]?.count ?? 0)")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                } header: {
-                    Text("\(filteredModels.count) models")
                 }
             }
         } label: {
