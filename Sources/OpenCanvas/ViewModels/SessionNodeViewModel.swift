@@ -79,13 +79,15 @@ final class SessionNodeViewModel {
                         id: model.id,
                         providerID: provider.id,
                         name: model.name,
-                        family: model.family
+                        family: model.family,
+                        cost: model.cost
                     ))
                 }
             }
             
             availableModels = allModels
-            log(.debug, category: .session, "Loaded \(availableModels.count) models total")
+            let freeCount = allModels.filter { $0.isFree }.count
+            log(.debug, category: .session, "Loaded \(availableModels.count) models total, \(freeCount) free")
         } catch {
             log(.error, category: .session, "Failed to load models: \(error.localizedDescription)")
         }

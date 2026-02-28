@@ -106,11 +106,23 @@ struct OCPromptModel: Codable, Sendable {
     }
 }
 
+struct OCCost: Codable, Sendable {
+    let input: Double
+    let output: Double
+    let cache: OCCacheCost?
+}
+
+struct OCCacheCost: Codable, Sendable {
+    let read: Double
+    let write: Double
+}
+
 struct OCModel: Codable, Sendable, Identifiable {
     let id: String
     let providerID: String
     let name: String
     let family: String?
+    let cost: OCCost?
     
     var displayName: String {
         name.isEmpty ? id : name
@@ -118,6 +130,11 @@ struct OCModel: Codable, Sendable, Identifiable {
     
     var fullID: String {
         "\(providerID)/\(id)"
+    }
+    
+    var isFree: Bool {
+        guard let cost = cost else { return false }
+        return cost.input == 0 && cost.output == 0
     }
 }
 

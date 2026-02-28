@@ -59,6 +59,15 @@ struct ModelSelector: View {
                                 HStack {
                                     Text(model.displayName)
                                         .font(.system(size: 12))
+                                    if model.isFree {
+                                        Text("Free")
+                                            .font(.system(size: 9, weight: .medium))
+                                            .padding(.horizontal, 5)
+                                            .padding(.vertical, 2)
+                                            .background(Color.green.opacity(0.2))
+                                            .foregroundStyle(.green)
+                                            .cornerRadius(3)
+                                    }
                                     Spacer()
                                     if model.fullID == selectedModel {
                                         Image(systemName: "checkmark")
