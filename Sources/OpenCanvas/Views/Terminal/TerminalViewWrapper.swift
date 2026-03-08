@@ -10,9 +10,10 @@ struct TerminalViewWrapper: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {
-        // Start the process only once when the view is first created
+        // Start the process only once
         if nsView.process == nil || !nsView.process.running {
             nsView.startProcess(executable: "/bin/zsh", args: ["-l"])
+            context.coordinator.isRunning = true
         }
     }
 
@@ -20,28 +21,40 @@ struct TerminalViewWrapper: NSViewRepresentable {
         Coordinator()
     }
 
+    static func dismantleNSView(_ nsView: LocalProcessTerminalView, coordinator: Coordinator) {
+        if nsView.process?.running == true {
+            nsView.terminate()
+            coordinator.isRunning = false
+        }
+    }
+
     class Coordinator: NSObject, LocalProcessTerminalViewDelegate {
+        var isRunning = false
+
         func sizeChanged(source: LocalProcessTerminalView, newCols: Int, newRows: Int) {
-            print("Terminal resized to \(newCols)x\(newRows)")
+            log(.debug, category: .ui, "Terminal resized to \(newCols)x\(newRows)")
         }
 
         func setTerminalTitle(source: LocalProcessTerminalView, title: String) {
-            print("Terminal title: \(title)")
+            log(.debug, category: .ui, "Terminal title changed: \(title)")
         }
 
         func hostCurrentDirectoryUpdate(source: TerminalView, directory: String?) {
             if let dir = directory {
-                print("Current directory: \(dir)")
+                log(.debug, category: .ui, "Terminal current directory: \(dir)")
             }
         }
 
         func processTerminated(source: TerminalView, exitCode: Int32?) {
             if let code = exitCode {
-                print("Process terminated with exit code: \(code)")
+                log(.info, category: .ui, "Terminal process terminated with exit code: \(code)")
             } else {
-                print("Process terminated with error")
+                log(.warning, category: .ui, "Terminal process terminated with error")
             }
+            isRunning = false
         }
     }
 }
+
+
 
