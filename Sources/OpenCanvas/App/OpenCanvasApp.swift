@@ -64,16 +64,20 @@ struct MainView: View {
                     .accessibilityIdentifier("canvasColumn")
                 
                 // Right column - Integrated terminal (50%)
-                TerminalViewWrapper()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black)
-                    .overlay(alignment: .leading) {
-                        Rectangle()
-                            .fill(Color.secondary.opacity(0.2))
-                            .frame(width: 1)
-                    }
-                    .accessibilityIdentifier("detailsColumn")
+                if appState.isTerminalExpanded {
+                    TerminalViewWrapper()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black)
+                        .overlay(alignment: .leading) {
+                            Rectangle()
+                                .fill(Color.secondary.opacity(0.2))
+                                .frame(width: 1)
+                        }
+                        .accessibilityIdentifier("detailsColumn")
+                        .transition(.move(edge: .trailing))
+                }
             }
+            .animation(.easeInOut(duration: 0.25), value: appState.isTerminalExpanded)
             
             if !OpenCodeServerManager.shared.isConnected {
                 VStack {

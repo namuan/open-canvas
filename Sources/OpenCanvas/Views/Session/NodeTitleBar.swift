@@ -71,6 +71,7 @@ struct NodeTitleBar: View {
                     }
 
                     appState.pendingSessionCommand = (sessionID, directory ?? "")
+                    appState.isTerminalExpanded = true
                 } label: {
                     HStack(spacing: 3) {
                         if sessionIDCopied {

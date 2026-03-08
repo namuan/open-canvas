@@ -17,6 +17,7 @@ final class AppState {
     var normalFontSize: CGFloat = 13
     var expandedFontSize: CGFloat = 16
     var pendingSessionCommand: (sessionID: String, directory: String)? = nil
+    var isTerminalExpanded: Bool = false
     private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
     
     private let serverManager = OpenCodeServerManager.shared
