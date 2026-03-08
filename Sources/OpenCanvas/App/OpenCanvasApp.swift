@@ -57,7 +57,40 @@ struct MainView: View {
     
     var body: some View {
         ZStack {
-            CanvasView()
+            HStack(spacing: 0) {
+                // Left column - Canvas (50%)
+                CanvasView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier("canvasColumn")
+                
+                // Right column - Placeholder for future details (50%)
+                VStack(spacing: 16) {
+                    Spacer()
+                    
+                    VStack(spacing: 8) {
+                        Text("Details Panel")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                        Text("More information will be added here in future updates.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 12))
+                    .padding()
+                    
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .overlay(alignment: .leading) {
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.2))
+                        .frame(width: 1)
+                }
+                .accessibilityIdentifier("detailsColumn")
+            }
             
             if !OpenCodeServerManager.shared.isConnected {
                 VStack {
@@ -74,6 +107,52 @@ struct MainView: View {
                 endPoint: .bottomTrailing
             )
         )
+        .task {
+            // Test layout verification mode
+            if ProcessInfo.processInfo.arguments.contains("--test-layout") {
+                // Wait for layout to settle
+                try? await Task.sleep(for: .seconds(1))
+                
+                let sizes: (canvas: CGFloat, details: CGFloat)? = await MainActor.run {
+                    guard let window = NSApp.windows.first,
+                          let contentView = window.contentView else {
+                        return nil
+                    }
+                    
+                    var canvasWidth: CGFloat?
+                    var detailsWidth: CGFloat?
+                    
+                    var stack: [NSView] = [contentView]
+                    while !stack.isEmpty {
+                        let view = stack.removeLast()
+                        if let id = view.value(forKey: "accessibilityIdentifier") as? String {
+                            if id == "canvasColumn" {
+                                canvasWidth = view.frame.width
+                            } else if id == "detailsColumn" {
+                                detailsWidth = view.frame.width
+                            }
+                        }
+                        stack.append(contentsOf: view.subviews)
+                    }
+                    
+                    if let cw = canvasWidth, let dw = detailsWidth {
+                        return (cw, dw)
+                    }
+                    return nil
+                }
+                
+                if let (canvasWidth, detailsWidth) = sizes {
+                    let json = "{\"canvasWidth\": \(canvasWidth), \"detailsWidth\": \(detailsWidth)}"
+                    print(json)
+                } else {
+                    print("{\"error\":\"views not found\"}")
+                }
+                
+                // Allow output to flush then exit
+                try? await Task.sleep(for: .seconds(1))
+                exit(0)
+            }
+        }
     }
     
     private var offlineBanner: some View {

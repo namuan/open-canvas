@@ -23,7 +23,7 @@ let package = Package(
         ),
         .testTarget(
             name: "OpenCanvasTests",
-            dependencies: [],
+            dependencies: ["OpenCanvas"],
             path: "Tests/OpenCanvasTests"
         )
     ]
