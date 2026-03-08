@@ -12,10 +12,13 @@ let package = Package(
             targets: ["OpenCanvas"]
         )
     ],
+    dependencies: [
+        .package(url: "https://github.com/migueldeicaza/SwiftTerm.git", from: "1.0.0")
+    ],
     targets: [
         .executableTarget(
             name: "OpenCanvas",
-            dependencies: [],
+            dependencies: ["SwiftTerm"],
             path: "Sources/OpenCanvas",
             swiftSettings: [
                 .enableUpcomingFeature("StrictConcurrency")

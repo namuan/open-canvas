@@ -31,6 +31,9 @@ struct ApplicationTests {
         // Verify canvas view exists
         #expect(fileManager.fileExists(atPath: "\(rootPath)/Sources/OpenCanvas/Views/Canvas/CanvasView.swift"))
         
+        // Verify terminal wrapper exists
+        #expect(fileManager.fileExists(atPath: "\(rootPath)/Sources/OpenCanvas/Views/Terminal/TerminalViewWrapper.swift"))
+        
         // Verify MainView exists with two-column layout
         let appFileContent = try String(contentsOfFile: "\(rootPath)/Sources/OpenCanvas/App/OpenCanvasApp.swift")
         
@@ -38,6 +41,7 @@ struct ApplicationTests {
         #expect(appFileContent.contains("detailsColumn"))
         #expect(appFileContent.contains("HStack"))
         #expect(appFileContent.contains("maxWidth: .infinity"))
+        #expect(appFileContent.contains("TerminalViewWrapper"))
         
         print("✅ Project structure is valid")
     }

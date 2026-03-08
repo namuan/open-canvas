@@ -63,33 +63,16 @@ struct MainView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .accessibilityIdentifier("canvasColumn")
                 
-                // Right column - Placeholder for future details (50%)
-                VStack(spacing: 16) {
-                    Spacer()
-                    
-                    VStack(spacing: 8) {
-                        Text("Details Panel")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                        Text("More information will be added here in future updates.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
+                // Right column - Integrated terminal (50%)
+                TerminalViewWrapper()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black)
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.2))
+                            .frame(width: 1)
                     }
-                    .padding()
-                    .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 12))
-                    .padding()
-                    
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color(nsColor: .controlBackgroundColor))
-                .overlay(alignment: .leading) {
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.2))
-                        .frame(width: 1)
-                }
-                .accessibilityIdentifier("detailsColumn")
+                    .accessibilityIdentifier("detailsColumn")
             }
             
             if !OpenCodeServerManager.shared.isConnected {
