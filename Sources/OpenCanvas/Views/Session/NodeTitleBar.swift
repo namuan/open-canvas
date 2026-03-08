@@ -69,7 +69,7 @@ struct NodeTitleBar: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         sessionIDCopied = false
                     }
-                    // Send command to terminal to run in session directory
+
                     appState.pendingSessionCommand = (sessionID, directory ?? "")
                 } label: {
                     HStack(spacing: 3) {

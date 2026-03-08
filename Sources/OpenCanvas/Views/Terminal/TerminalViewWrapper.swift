@@ -18,9 +18,9 @@ struct TerminalViewWrapper: NSViewRepresentable {
             context.coordinator.isRunning = true
         }
 
-        // Execute any pending command from session node click
+
         if let command = appState.pendingSessionCommand {
-            // Clear immediately to avoid re-execution
+
             appState.pendingSessionCommand = nil
 
             var fullCommand = ""
@@ -28,13 +28,13 @@ struct TerminalViewWrapper: NSViewRepresentable {
             let sessionID = command.sessionID
 
             if !directory.isEmpty {
-                // Escape double quotes in path
+
                 let escapedDir = directory.replacingOccurrences(of: "\"", with: "\\\"")
                 fullCommand = "cd \"\(escapedDir)\"\r\n"
             }
             fullCommand.append("opencode -s \(sessionID)\r\n")
 
-            // Send as input to the shell process
+
             let bytes = Array(fullCommand.utf8)
             nsView.process?.send(data: bytes[...])
             log(.debug, category: .ui, "Executed command in terminal: \(fullCommand)")
