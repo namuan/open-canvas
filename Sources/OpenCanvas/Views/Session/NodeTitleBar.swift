@@ -61,32 +61,44 @@ struct NodeTitleBar: View {
                 .help("Rename")
             }
 
-            if let sessionID {
-                Button {
-                    NSPasteboard.general.clearContents()
-                    NSPasteboard.general.setString("opencode -s \(sessionID)", forType: .string)
-                    sessionIDCopied = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                        sessionIDCopied = false
-                    }
+             if let sessionID {
+                 Button {
+                     NSPasteboard.general.clearContents()
+                     NSPasteboard.general.setString("opencode -s \(sessionID)", forType: .string)
+                     sessionIDCopied = true
+                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                         sessionIDCopied = false
+                     }
 
-                    appState.pendingSessionCommand = (sessionID, directory ?? "")
-                    appState.isTerminalExpanded = true
-                } label: {
-                    HStack(spacing: 3) {
-                        if sessionIDCopied {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: max(8, sessionFontSize - 4), weight: .semibold))
-                        }
-                        Text(sessionID.truncated(to: 12))
-                            .font(.system(size: max(9, sessionFontSize - 3), design: .monospaced))
-                    }
-                    .foregroundStyle(sessionIDCopied ? Color.green : Color.secondary)
-                }
-                .buttonStyle(.plain)
-                .help("Copy: opencode -s \(sessionID)")
-                .animation(.easeInOut(duration: 0.2), value: sessionIDCopied)
-            }
+                     appState.pendingSessionCommand = (sessionID, directory ?? "")
+                     appState.isTerminalExpanded = true
+                 } label: {
+                     HStack(spacing: 3) {
+                         if sessionIDCopied {
+                             Image(systemName: "checkmark")
+                                 .font(.system(size: max(8, sessionFontSize - 4), weight: .semibold))
+                         }
+                         Text(sessionID.truncated(to: 12))
+                             .font(.system(size: max(9, sessionFontSize - 3), design: .monospaced))
+                     }
+                     .foregroundStyle(sessionIDCopied ? Color.green : Color.secondary)
+                 }
+                 .buttonStyle(.plain)
+                 .help("Copy: opencode -s \(sessionID)")
+                 .animation(.easeInOut(duration: 0.2), value: sessionIDCopied)
+
+                 if appState.isTerminalExpanded {
+                     Button {
+                         appState.isTerminalExpanded = false
+                     } label: {
+                         Image(systemName: "terminal.fill")
+                             .font(.system(size: max(9, sessionFontSize - 3), weight: .semibold))
+                             .foregroundStyle(.orange)
+                     }
+                     .buttonStyle(.plain)
+                     .help("Close Terminal")
+                 }
+             }
             
             ModelSelector(
                 selectedModel: Binding(
