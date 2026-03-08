@@ -58,24 +58,21 @@ struct MainView: View {
     var body: some View {
         ZStack {
             HStack(spacing: 0) {
-                // Left column - Canvas (50%)
+                // Left column - Canvas (fills remaining space)
                 CanvasView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .accessibilityIdentifier("canvasColumn")
                 
-                // Right column - Integrated terminal (50%)
-                if appState.isTerminalExpanded {
-                    TerminalViewWrapper()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black)
-                        .overlay(alignment: .leading) {
-                            Rectangle()
-                                .fill(Color.secondary.opacity(0.2))
-                                .frame(width: 1)
-                        }
-                        .accessibilityIdentifier("detailsColumn")
-                        .transition(.move(edge: .trailing))
-                }
+                // Right column - Integrated terminal (collapsible)
+                TerminalViewWrapper()
+                    .frame(maxWidth: appState.isTerminalExpanded ? .infinity : 0, maxHeight: .infinity)
+                    .background(Color.black)
+                    .overlay(alignment: .leading) {
+                        Rectangle()
+                            .fill(Color.secondary.opacity(0.2))
+                            .frame(width: 1)
+                    }
+                    .accessibilityIdentifier("detailsColumn")
             }
             .animation(.easeInOut(duration: 0.25), value: appState.isTerminalExpanded)
             
