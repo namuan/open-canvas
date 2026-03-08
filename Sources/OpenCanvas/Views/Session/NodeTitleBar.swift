@@ -3,6 +3,7 @@ import SwiftUI
 struct NodeTitleBar: View {
     let title: String
     let sessionID: String?
+    let directory: String?
     let selectedModel: String?
     let availableModels: [OCModel]
     let isLoadingModels: Bool
@@ -11,6 +12,8 @@ struct NodeTitleBar: View {
     let onMinimize: () -> Void
     let onToggleExpand: () -> Void
     let onClose: () -> Void
+
+    @Environment(AppState.self) private var appState
     
     @State private var isEditing = false
     @State private var editedTitle = ""
@@ -66,6 +69,8 @@ struct NodeTitleBar: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                         sessionIDCopied = false
                     }
+                    // Send command to terminal to run in session directory
+                    appState.pendingSessionCommand = (sessionID, directory ?? "")
                 } label: {
                     HStack(spacing: 3) {
                         if sessionIDCopied {

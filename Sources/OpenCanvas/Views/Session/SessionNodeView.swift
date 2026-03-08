@@ -106,6 +106,7 @@ struct SessionNodeView: View {
             NodeTitleBar(
                 title: node.title,
                 sessionID: viewModel.sessionID,
+                directory: viewModel.selectedDirectory,
                 selectedModel: viewModel.selectedModel,
                 availableModels: viewModel.availableModels,
                 isLoadingModels: viewModel.isLoadingModels,

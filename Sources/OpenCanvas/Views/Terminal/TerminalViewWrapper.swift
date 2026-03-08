@@ -2,6 +2,8 @@ import SwiftTerm
 import SwiftUI
 
 struct TerminalViewWrapper: NSViewRepresentable {
+    @Environment(AppState.self) private var appState
+
     func makeNSView(context: Context) -> LocalProcessTerminalView {
         let terminalView = LocalProcessTerminalView(frame: .zero)
         terminalView.font = NSFont.monospacedSystemFont(ofSize: 13, weight: .regular)
@@ -14,6 +16,28 @@ struct TerminalViewWrapper: NSViewRepresentable {
         if nsView.process == nil || !nsView.process.running {
             nsView.startProcess(executable: "/bin/zsh", args: ["-l"])
             context.coordinator.isRunning = true
+        }
+
+        // Execute any pending command from session node click
+        if let command = appState.pendingSessionCommand {
+            // Clear immediately to avoid re-execution
+            appState.pendingSessionCommand = nil
+
+            var fullCommand = ""
+            let directory = command.directory
+            let sessionID = command.sessionID
+
+            if !directory.isEmpty {
+                // Escape double quotes in path
+                let escapedDir = directory.replacingOccurrences(of: "\"", with: "\\\"")
+                fullCommand = "cd \"\(escapedDir)\"\r\n"
+            }
+            fullCommand.append("opencode -s \(sessionID)\r\n")
+
+            // Send as input to the shell process
+            let bytes = Array(fullCommand.utf8)
+            nsView.process?.send(data: bytes[...])
+            log(.debug, category: .ui, "Executed command in terminal: \(fullCommand)")
         }
     }
 
