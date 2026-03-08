@@ -12,15 +12,22 @@ struct TerminalViewWrapper: NSViewRepresentable {
     }
 
     func updateNSView(_ nsView: LocalProcessTerminalView, context: Context) {
+        // Terminate session if requested
+        if appState.shouldTerminateTerminalSession {
+            if nsView.process?.running == true {
+                nsView.terminate()
+            }
+            appState.shouldTerminateTerminalSession = false
+            appState.pendingSessionCommand = nil // Clear any pending command to avoid execution after termination
+        }
+
         // Start the process only once
         if nsView.process == nil || !nsView.process.running {
             nsView.startProcess(executable: "/bin/zsh", args: ["-l"])
             context.coordinator.isRunning = true
         }
 
-
         if let command = appState.pendingSessionCommand {
-
             appState.pendingSessionCommand = nil
 
             var fullCommand = ""
@@ -28,12 +35,10 @@ struct TerminalViewWrapper: NSViewRepresentable {
             let sessionID = command.sessionID
 
             if !directory.isEmpty {
-
                 let escapedDir = directory.replacingOccurrences(of: "\"", with: "\\\"")
                 fullCommand = "cd \"\(escapedDir)\"\r\n"
             }
             fullCommand.append("opencode -s \(sessionID)\r\n")
-
 
             let bytes = Array(fullCommand.utf8)
             nsView.process?.send(data: bytes[...])
@@ -79,6 +84,3 @@ struct TerminalViewWrapper: NSViewRepresentable {
         }
     }
 }
-
-
-

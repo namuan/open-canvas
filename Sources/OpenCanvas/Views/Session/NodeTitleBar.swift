@@ -88,15 +88,16 @@ struct NodeTitleBar: View {
                  .animation(.easeInOut(duration: 0.2), value: sessionIDCopied)
 
                  if appState.isTerminalExpanded {
-                     Button {
-                         appState.isTerminalExpanded = false
-                     } label: {
-                         Image(systemName: "terminal.fill")
-                             .font(.system(size: max(9, sessionFontSize - 3), weight: .semibold))
-                             .foregroundStyle(.orange)
-                     }
-                     .buttonStyle(.plain)
-                     .help("Close Terminal")
+                 Button {
+                     appState.isTerminalExpanded = false
+                     appState.shouldTerminateTerminalSession = true
+                 } label: {
+                     Image(systemName: "terminal.fill")
+                         .font(.system(size: max(9, sessionFontSize - 3), weight: .semibold))
+                         .foregroundStyle(.orange)
+                 }
+                 .buttonStyle(.plain)
+                 .help("Close Terminal")
                  }
              }
             

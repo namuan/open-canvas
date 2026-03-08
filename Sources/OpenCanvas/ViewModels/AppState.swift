@@ -16,9 +16,10 @@ final class AppState {
     var nodeSpacing: CGFloat = 40
     var normalFontSize: CGFloat = 13
     var expandedFontSize: CGFloat = 16
-    var pendingSessionCommand: (sessionID: String, directory: String)? = nil
-    var isTerminalExpanded: Bool = false
-    private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
+     var pendingSessionCommand: (sessionID: String, directory: String)? = nil
+     var isTerminalExpanded: Bool = false
+     var shouldTerminateTerminalSession: Bool = false
+     private var maximizedNodeSnapshots: [UUID: NodeFrameSnapshot] = [:]
     
     private let serverManager = OpenCodeServerManager.shared
     private let persistenceService = PersistenceService.shared
