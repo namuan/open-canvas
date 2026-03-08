@@ -15,10 +15,16 @@ struct TerminalViewWrapper: NSViewRepresentable {
         // Terminate session if requested
         if appState.shouldTerminateTerminalSession {
             if nsView.process?.running == true {
+                // Clear terminal before terminating
+                let clearCommand = "clear\r\n"
+                let bytes = Array(clearCommand.utf8)
+                nsView.process?.send(data: bytes[...])
+                
                 nsView.terminate()
             }
             appState.shouldTerminateTerminalSession = false
-            appState.pendingSessionCommand = nil // Clear any pending command to avoid execution after termination
+            appState.pendingSessionCommand = nil
+            context.coordinator.isRunning = false
         }
 
         // Start the process only once
@@ -34,9 +40,12 @@ struct TerminalViewWrapper: NSViewRepresentable {
             let directory = command.directory
             let sessionID = command.sessionID
 
+            // Clear terminal first
+            fullCommand = "clear\r\n"
+
             if !directory.isEmpty {
                 let escapedDir = directory.replacingOccurrences(of: "\"", with: "\\\"")
-                fullCommand = "cd \"\(escapedDir)\"\r\n"
+                fullCommand += "cd \"\(escapedDir)\"\r\n"
             }
             fullCommand.append("opencode -s \(sessionID)\r\n")
 
